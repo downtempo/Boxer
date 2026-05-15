@@ -1,0 +1,24 @@
+{
+  "originHash" : "1552822f5a36315e7c39e8a98a6328da10a8145ac203c79ccd605b3ff5e31c6f",
+  "pins" : [
+    {
+      "identity" : "cwldemangle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mattgallagher/CwlDemangle.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "6bfc351bd08d7a1805234b9ba698f8381d2df08e"
+      }
+    },
+    {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle",
+      "state" : {
+        "revision" : "10d96f2b9b9905b0f529f09e517219d4e20125c0",
+        "version" : "1.27.3"
+      }
+    }
+  ],
+  "version" : 3
+}
