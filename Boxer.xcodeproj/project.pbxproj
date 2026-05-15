@@ -5536,9 +5536,9 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		55D432012504BB65008515E1 /* XCRemoteSwiftPackageReference "CwlDemangle" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MaddTheSane/CwlDemangle.git";
+			repositoryURL = "https://github.com/mattgallagher/CwlDemangle.git";
 			requirement = {
-				branch = swift5Compat;
+				branch = master;
 				kind = branch;
 			};
 		};
