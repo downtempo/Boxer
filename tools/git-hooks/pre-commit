@@ -1,0 +1,140 @@
+#!/bin/bash
+# pre-commit hook: enforce project conventions before allowing a commit.
+#
+# Checks (each runs independently; all failures are reported together):
+#   1. Refuse commits on protected branches (maddsV2, master, main).
+#      Protected branches must stay clean mirrors per AGENTS.md > Branch naming.
+#   2. Reject staged content containing merge conflict markers.
+#   3. Scan staged content for obvious personal-data leaks (absolute user
+#      paths, common secret patterns).
+#
+# Install: tools/setup-git-hooks.sh
+# Bypass:  git commit --no-verify (discouraged; use only when truly necessary)
+
+set -u
+
+PROTECTED_BRANCHES=(maddsV2 master main)
+errors=()
+
+# -----------------------------------------------------------------------------
+# Check 1: protected branches
+# -----------------------------------------------------------------------------
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+
+for p in "${PROTECTED_BRANCHES[@]}" ; do
+  if [[ "$branch" == "$p" ]] ; then
+    errors+=(
+      "Refusing commit to protected branch '$branch'."
+      "    Protected branches are clean upstream mirrors and must not receive"
+      "    fork commits directly."
+      "    Create a topic branch first:"
+      "        git checkout -b <type>/<short-description>"
+      "    See AGENTS.md > Branch naming for the prefix conventions."
+    )
+    break
+  fi
+done
+
+# -----------------------------------------------------------------------------
+# Check 2: merge conflict markers in staged content
+# -----------------------------------------------------------------------------
+#
+# Conflict markers are unambiguous when followed by ` HEAD`, ` <branch>`, or
+# in diff3 mode. We require the trailing space + identifier to avoid flagging
+# legitimate markdown setext-style headers (long runs of `=`).
+
+conflict_hits="$(
+  git diff --cached -U0 --no-color 2>/dev/null \
+    | grep -nE '^\+(<{7} |>{7} |\|{7} )' \
+    || true
+)"
+
+if [[ -n "$conflict_hits" ]] ; then
+  errors+=("Staged content contains merge conflict markers:")
+  while IFS= read -r line ; do
+    errors+=("    $line")
+  done <<< "$conflict_hits"
+  errors+=("    Resolve the conflict before committing.")
+fi
+
+# -----------------------------------------------------------------------------
+# Check 3: personal-data and secret leaks in staged content
+# -----------------------------------------------------------------------------
+#
+# Conservative: prefer false negatives over false positives. Patterns added
+# here should have very low collision risk with legitimate content.
+
+leak_patterns=(
+  '/Users/[a-zA-Z][a-zA-Z0-9._-]*/'
+  '/home/[a-zA-Z][a-zA-Z0-9._-]*/'
+  'AKIA[0-9A-Z]{16}'
+  'gh[poursb]_[A-Za-z0-9]{36,}'
+  'xox[abp]-[A-Za-z0-9-]{10,}'
+  '-----BEGIN (RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY-----'
+)
+
+leak_descriptions=(
+  'Absolute path under /Users/. Use repo-relative paths.'
+  'Absolute path under /home/. Use repo-relative paths.'
+  'AWS access key ID.'
+  'GitHub personal access token.'
+  'Slack token.'
+  'Private key block.'
+)
+
+# Exclude legitimate Apple-shared paths and common placeholder forms.
+exclude_re='/Users/Shared/|/Users/yourusername/|/Users/<'
+
+leak_findings=()
+
+for i in "${!leak_patterns[@]}" ; do
+  pattern="${leak_patterns[$i]}"
+  hits="$(
+    git diff --cached -U0 --no-color 2>/dev/null \
+      | grep -nE "^\+.*${pattern}" \
+      | grep -vE "${exclude_re}" \
+      || true
+  )"
+  if [[ -n "$hits" ]] ; then
+    leak_findings+=("  ${leak_descriptions[$i]}")
+    while IFS= read -r hit ; do
+      leak_findings+=("      $hit")
+    done <<< "$hits"
+  fi
+done
+
+if [[ ${#leak_findings[@]} -gt 0 ]] ; then
+  errors+=("Possible personal data or secrets in staged content:")
+  for f in "${leak_findings[@]}" ; do
+    errors+=("  $f")
+  done
+  errors+=(
+    "  Redact or move out of the diff before committing."
+    "  If this is intentional (a test fixture, example, or known-public value),"
+    "  bypass with: git commit --no-verify"
+    "  See AGENTS.md > Personal data and identifying information."
+  )
+fi
+
+# -----------------------------------------------------------------------------
+# Report and exit
+# -----------------------------------------------------------------------------
+
+if [[ ${#errors[@]} -gt 0 ]] ; then
+  {
+    echo
+    echo "pre-commit hook rejected this commit:"
+    echo
+    for line in "${errors[@]}" ; do
+      echo "  $line"
+    done
+    echo
+    echo "To bypass for a single commit (rarely justified):"
+    echo "    git commit --no-verify"
+    echo
+  } >&2
+  exit 1
+fi
+
+exit 0

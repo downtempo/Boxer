@@ -15,3 +15,28 @@ xcuserdata/
 project.xcworkspace
 DerivedData/
 swiftpm/
+
+#Modern Xcode artifacts
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.hmap
+*.dSYM
+*.dSYM.zip
+.swiftpm/
+.build/
+
+#AI assistant and IDE state (per-user)
+.claude/
+.cursor/
+.idea/
+.vscode/
+.aider*
+
+#Editor scratch files
+*.swp
+*~
+
+#Python bytecode (from reindex_help.py)
+__pycache__/
+*.pyc

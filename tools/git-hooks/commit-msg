@@ -1,0 +1,80 @@
+#!/bin/bash
+# commit-msg hook: enforce the project's AI-attribution conventions.
+#
+# Rules (see AGENTS.md > Attribution):
+#   - Reject Co-Authored-By trailers naming an AI agent.
+#   - Reject "Generated with ..." boilerplate footers.
+#   - Reject "Claude:", "Codex:", "ChatGPT:" subject-line prefixes.
+#   - If an Assisted-by: trailer is present, validate its format.
+#
+# Install: ./tools/setup-git-hooks.sh
+#
+# To bypass in an emergency: git commit --no-verify (the project policy
+# discourages this; use only when truly necessary, e.g. a merge commit
+# from a tool that you cannot configure).
+
+set -u
+
+msg_file="$1"
+msg="$(cat "$msg_file")"
+errors=()
+
+# AI vendors whose Co-authored-by trailers are forbidden.
+ai_authors_re='(claude|chatgpt|codex|copilot|aider|cursor|openai|anthropic|github copilot|gemini)'
+ai_emails_re='@(anthropic\.com|openai\.com|aider\.chat|noreply\.github\.com.*copilot|cursor\.sh)'
+
+# 1. Forbidden Co-authored-by trailers (AI agents).
+while IFS= read -r line ; do
+  if [[ "$line" =~ ^[Cc]o-[Aa]uthored-[Bb]y: ]] ; then
+    lower="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$lower" =~ $ai_authors_re ]] || [[ "$lower" =~ $ai_emails_re ]] ; then
+      errors+=("Forbidden AI Co-authored-by trailer:")
+      errors+=("    $line")
+      errors+=("    Use 'Assisted-by: <agent> (<model>)' instead.")
+    fi
+  fi
+done <<< "$msg"
+
+# 2. "Generated with" boilerplate.
+if echo "$msg" | grep -qE '🤖|Generated with .*(Claude|Codex|Copilot|Cursor|Aider)' ; then
+  errors+=("Forbidden 'Generated with ...' boilerplate found.")
+  errors+=("    Remove the line. Use the Assisted-by: trailer instead.")
+fi
+
+# 3. Subject-line prefixes naming the AI agent.
+subject="$(printf '%s' "$msg" | head -n 1)"
+if [[ "$subject" =~ ^(Claude|Codex|ChatGPT|Copilot|Aider|Cursor)[[:space:]]*: ]] ; then
+  errors+=("Subject line starts with an AI agent name (\"${BASH_REMATCH[1]}:\").")
+  errors+=("    Rewrite the subject to describe the change, not the author.")
+fi
+
+# 4. Validate Assisted-by: format if present.
+while IFS= read -r line ; do
+  if [[ "$line" =~ ^[Aa]ssisted-[Bb]y: ]] ; then
+    if [[ ! "$line" =~ ^Assisted-by:\ [A-Za-z][A-Za-z0-9\ ]*\ \([a-z][a-z0-9.\-]*\)$ ]] ; then
+      errors+=("Malformed Assisted-by trailer:")
+      errors+=("    $line")
+      errors+=("    Expected: 'Assisted-by: <Agent Name> (<model-id>)'")
+      errors+=("    Examples: Assisted-by: Claude Code (claude-sonnet-4-6)")
+      errors+=("              Assisted-by: OpenAI Codex (gpt-5)")
+    fi
+  fi
+done <<< "$msg"
+
+if [[ ${#errors[@]} -gt 0 ]] ; then
+  {
+    echo
+    echo "commit-msg hook rejected this commit:"
+    echo
+    for err in "${errors[@]}" ; do
+      echo "  $err"
+    done
+    echo
+    echo "See AGENTS.md > Commit conventions > Attribution for the full rules."
+    echo "To bypass (rarely justified): git commit --no-verify"
+    echo
+  } >&2
+  exit 1
+fi
+
+exit 0
