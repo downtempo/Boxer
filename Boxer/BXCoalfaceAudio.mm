@@ -116,6 +116,12 @@ void boxer_sendMIDIMessage(Bit8u *msg)
 
 void boxer_sendMIDISysex(Bit8u *msg, Bitu len)
 {
+    //Defense-in-depth: DOSBox already bounds SysEx length internally, but
+    //cap it host-side too so a future DOSBox bug or fuzzed input can't hand
+    //us an unreasonable length. 64 KiB is far above any legitimate SysEx
+    //(even large real-world patch dumps are well under this).
+    if (len > 65536) return;
+
     [[BXEmulator currentEmulator] sendMIDISysex: [NSData dataWithBytesNoCopy: msg length: len freeWhenDone: NO]];
 }
 
