@@ -15,6 +15,10 @@ xcuserdata/
 project.xcworkspace
 DerivedData/
 swiftpm/
+# Track the workspace SPM lockfile so dependency revisions are reproducible.
+# Deps track branches (not tags), so without the committed lockfile, builds float.
+!Boxer.xcworkspace/xcshareddata/swiftpm/
+!Boxer.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 #Modern Xcode artifacts
 *.xcuserstate
