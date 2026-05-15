@@ -31,7 +31,6 @@
 #import "NSString+ADBPaths.h"
 #import "NSURL+ADBFilesystemHelpers.h"
 #import "NSFileManager+ADBTemporaryFiles.h"
-#import "RegexKitLite.h"
 #import "BXBezelController.h"
 #import "ADBUserNotificationDispatcher.h"
 #import "BXInspectorController.h"

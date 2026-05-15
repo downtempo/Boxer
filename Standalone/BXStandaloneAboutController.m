@@ -35,12 +35,11 @@
 - (void) windowDidLoad
 {
     [super windowDidLoad];
-    
+
     NSURL *creditsResourceURL = [[NSBundle mainBundle] URLForResource: @"Credits" withExtension: @"html"];
-    self.creditsView.mainFrameURL = creditsResourceURL.absoluteString;
-    self.creditsView.drawsBackground = NO;
-    self.creditsView.shouldUpdateWhileOffscreen = NO;
-    self.creditsView.shouldCloseWithWindow = YES;
+    [self.creditsView loadFileURL: creditsResourceURL
+         allowingReadAccessToURL: creditsResourceURL.URLByDeletingLastPathComponent];
+    self.creditsView.underPageBackgroundColor = [NSColor clearColor];
     
     //Hide the website button and center the acknowledgements button if this app doesn't have a website URL
     NSURL *websiteURL = [BXStandaloneAppController organizationWebsiteURL];
@@ -55,20 +54,19 @@
     }
 }
 
-- (void) webView: (WebView *)webView decidePolicyForNavigationAction: (NSDictionary *)actionInformation
-         request: (NSURLRequest *)request
-           frame: (WebFrame *)frame
-decisionListener: (id < WebPolicyDecisionListener >)listener
+- (void) webView: (WKWebView *)webView
+decidePolicyForNavigationAction: (WKNavigationAction *)navigationAction
+                decisionHandler: (void (^)(WKNavigationActionPolicy))decisionHandler
 {
     //Open remote URLs in the standard browser.
-    NSString *host = request.URL.host;
-    if (host)
+    if (navigationAction.request.URL.host)
     {
-        [[NSWorkspace sharedWorkspace] openURL: request.URL];
+        [[NSWorkspace sharedWorkspace] openURL: navigationAction.request.URL];
+        decisionHandler(WKNavigationActionPolicyCancel);
     }
     else
     {
-        [listener use];
+        decisionHandler(WKNavigationActionPolicyAllow);
     }
 }
 

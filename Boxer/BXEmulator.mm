@@ -7,6 +7,7 @@
 
 #import "BXEmulatorPrivate.h"
 #import "NSObject+ADBPerformExtensions.h"
+#import <objc/runtime.h>
 
 #import <SDL2/SDL.h>
 #import "cpu.h"
@@ -967,11 +968,9 @@ static BOOL _hasStartedEmulator = NO;
 
 - (void) _runLoopWillStartWithContextInfo: (void **)contextInfo
 {
-    //Create an autorelease pool for this iteration of the runloop:
-    //we'll drain it down in _runLoopDidFinishWithAutoreleasePool:
     if (contextInfo)
     {
-        *contextInfo = [[NSAutoreleasePool alloc] init];
+        *contextInfo = objc_autoreleasePoolPush();
     }
 	[self.delegate emulatorWillStartRunLoop: self];
 }
@@ -979,12 +978,12 @@ static BOOL _hasStartedEmulator = NO;
 - (void) _runLoopDidFinishWithContextInfo: (void *)contextInfo
 {
 	[self.delegate emulatorDidFinishRunLoop: self];
-    
+
     _lastRunLoopTime = [NSDate timeIntervalSinceReferenceDate];
-    
+
     if (contextInfo)
     {
-        [(NSAutoreleasePool *)contextInfo drain];
+        objc_autoreleasePoolPop(contextInfo);
     }
 }
 
