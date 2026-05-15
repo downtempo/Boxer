@@ -9,6 +9,8 @@
 #import "BXMIDIConstants.h"
 #import "BXExternalMT32+BXMT32Sysexes.h"
 
+#import <os/lock.h>
+
 
 //How long (in seconds) Boxer will wait before giving up on a response from a MIDI device.
 #define BXMIDIInputListenerDefaultTimeout 1
@@ -63,6 +65,7 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
 	MIDIPortRef _outputPort;
 	MIDIPortRef _inputPort;
 	NSMutableArray *_discoveredMT32s;
+	os_unfair_lock _discoveredMT32sLock;
 	NSMutableArray *_listeners;
 }
 
@@ -74,10 +77,9 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
 - (NSArray *) discoveredMT32s
 {
     NSArray *MT32s;
-    @synchronized(_discoveredMT32s)
-    {
-        MT32s = [[NSArray alloc] initWithArray: _discoveredMT32s copyItems: YES];
-    }
+    os_unfair_lock_lock(&_discoveredMT32sLock);
+    MT32s = [[NSArray alloc] initWithArray: _discoveredMT32s copyItems: YES];
+    os_unfair_lock_unlock(&_discoveredMT32sLock);
     return MT32s;
 }
 
@@ -88,6 +90,7 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
         //Create our listeners pool and MT-32 results pool
         _listeners = [[NSMutableArray alloc] initWithCapacity: 1];
         _discoveredMT32s = [[NSMutableArray alloc] initWithCapacity: 1];
+        _discoveredMT32sLock = OS_UNFAIR_LOCK_INIT;
     }
     return self;
 }
@@ -223,12 +226,16 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
                     NSNumber *storedID = [NSNumber numberWithInteger: destinationID];
                     if ([_discoveredMT32s containsObject: storedID])
                     {
-                        //Synchronize to avoid problems if another thread is currently accessing the MT-32 list.
-                        @synchronized(_discoveredMT32s)
-                        {
-                            NSMutableArray *mutableDestinations = [self mutableArrayValueForKey: @"discoveredMT32s"];
-                            [mutableDestinations removeObject: storedID];
-                        }
+                        //Mutate the backing array directly under our lock, emitting KVO
+                        //notifications manually. We can't use mutableArrayValueForKey:
+                        //here: with no indexed accessors it routes through the locked
+                        //discoveredMT32s getter, which would recursively re-enter the
+                        //non-recursive os_unfair_lock and deadlock.
+                        [self willChangeValueForKey: @"discoveredMT32s"];
+                        os_unfair_lock_lock(&_discoveredMT32sLock);
+                        [_discoveredMT32s removeObject: storedID];
+                        os_unfair_lock_unlock(&_discoveredMT32sLock);
+                        [self didChangeValueForKey: @"discoveredMT32s"];
                     }
                 }
             }
@@ -257,12 +264,16 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
             
             if (errCode == noErr)
             {
-                //Synchronize to avoid problems if another thread is currently accessing the MT-32 list.
-                @synchronized(_discoveredMT32s)
-                {
-                    NSMutableArray *mutableDestinations = [self mutableArrayValueForKey: @"discoveredMT32s"];
-                    [mutableDestinations addObject: [NSNumber numberWithInteger: destinationID]];
-                }
+                //Mutate the backing array directly under our lock, emitting KVO
+                //notifications manually. We can't use mutableArrayValueForKey:
+                //here: with no indexed accessors it routes through the locked
+                //discoveredMT32s getter, which would recursively re-enter the
+                //non-recursive os_unfair_lock and deadlock.
+                [self willChangeValueForKey: @"discoveredMT32s"];
+                os_unfair_lock_lock(&_discoveredMT32sLock);
+                [_discoveredMT32s addObject: [NSNumber numberWithInteger: destinationID]];
+                os_unfair_lock_unlock(&_discoveredMT32sLock);
+                [self didChangeValueForKey: @"discoveredMT32s"];
             }
         }
         else
