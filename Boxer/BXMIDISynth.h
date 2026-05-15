@@ -5,11 +5,10 @@
  online at [http://www.gnu.org/licenses/gpl-2.0.txt].
  */
 
-//BXMIDISyth sending MIDI signals from DOSBox to OS X's built-in MIDI synth, using the AUGraph API.
+//BXMIDISynth sends MIDI signals from DOSBox to a General MIDI synthesizer via AVAudioEngine.
 //It's largely cribbed from DOSBox's own coreaudio MIDI handler.
 
 #import "BXMIDIDevice.h"
-#import <AudioToolbox/AudioToolbox.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

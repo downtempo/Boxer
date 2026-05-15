@@ -60,7 +60,7 @@
 #include <objc/objc-runtime.h>
 #endif
 
-#include <libkern/OSAtomic.h>
+#include <os/lock.h>
 #include <mach-o/loader.h>
 #include <AvailabilityMacros.h>
 #include <dlfcn.h>
@@ -370,7 +370,8 @@ static RKLCachedRegex *rkl_lastCachedRegex;
 #endif // defined(__GNUC__) && (__GNUC__ == 4) && defined(__GNUC_MINOR__) && (__GNUC_MINOR__ == 2)
 static RKLLRUCacheSet_t     rkl_cachedRegexCacheSets[_RKL_REGEX_LRU_CACHE_SETS] = { [0 ... (_RKL_REGEX_LRU_CACHE_SETS - 1UL)] = _RKL_LRU_CACHE_SET_INIT };
 static RKLLookasideCache_t  rkl_regexLookasideCache[_RKL_REGEX_LOOKASIDE_CACHE_SIZE] RKL_ALIGNED(64);
-static OSSpinLock           rkl_cacheSpinLock = OS_SPINLOCK_INIT;
+static os_unfair_lock       rkl_cacheSpinLock = OS_UNFAIR_LOCK_INIT;
+static BOOL                 rkl_cacheSpinLockHeld = NO;
 static const UniChar        rkl_emptyUniCharString[1];                                // For safety, icu_regexes are 'set' to this when the string they were searched is cleared.
 static RKL_STRONG_REF void * RKL_GC_VOLATILE rkl_scratchBuffer[_RKL_SCRATCH_BUFFERS]; // Used to hold temporary allocations that are allocated via reallocf().
 
@@ -611,7 +612,7 @@ static void rkl_RegisterForLowMemoryNotifications(void) RKL_ATTRIBUTES(used);
 @interface      RKLLowMemoryWarningObserver : NSObject +(void)lowMemoryWarning:(id)notification; @end
 @implementation RKLLowMemoryWarningObserver
 +(void)lowMemoryWarning:(id)notification {
-  if(OSSpinLockTry(&rkl_cacheSpinLock)) { rkl_clearStringCache(); OSSpinLockUnlock(&rkl_cacheSpinLock); }
+  if(os_unfair_lock_trylock(&rkl_cacheSpinLock)) { rkl_cacheSpinLockHeld = YES; rkl_clearStringCache(); rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock); }
   else { [[RKLLowMemoryWarningObserver class] performSelector:@selector(lowMemoryWarning:) withObject:notification afterDelay:(NSTimeInterval)0.1]; }
 }
 @end
@@ -779,7 +780,7 @@ static RKLCachedRegex *rkl_getCachedRegex(NSString *regexString, RKLRegexOptions
   CFHashCode      regexHash   = 0UL;
   int32_t         status      = 0;
 
-  RKLCDelayedAssert((rkl_cacheSpinLock != (OSSpinLock)0) && (regexString != NULL), exception, exitNow);
+  RKLCDelayedAssert(rkl_cacheSpinLockHeld && (regexString != NULL), exception, exitNow);
   
   // Fast path the common case where this regex is exactly the same one used last time.
   // The pointer equality test is valid under these circumstances since the cachedRegex->regexString is an immutable copy.
@@ -1023,7 +1024,7 @@ exitNow:
 
 // rkl_cleanup_cacheSpinLockStatus takes advantage of GCC's 'cleanup' variable attribute.  When an 'auto' variable with the 'cleanup' attribute goes out of scope,
 // GCC arranges to have the designated function called.  In this case, we make sure that if rkl_cacheSpinLock was locked that it was also unlocked.
-// If rkl_cacheSpinLock was locked, but the rkl_cacheSpinLockStatus unlocked flag was not set, we force rkl_cacheSpinLock unlocked with a call to OSSpinLockUnlock.
+// If rkl_cacheSpinLock was locked, but the rkl_cacheSpinLockStatus unlocked flag was not set, we force rkl_cacheSpinLock unlocked with a call to os_unfair_lock_unlock.
 // This is not a panacea for preventing mutex usage errors.  Old style ObjC exceptions will bypass the cleanup call, but newer C++ style ObjC exceptions should cause the cleanup function to be called during the stack unwind.
 
 // We do not depend on this cleanup function being called.  It is used only as an extra safety net.  It is probably a bug in RegexKitLite if it is ever invoked and forced to take some kind of protective action.
@@ -1042,10 +1043,10 @@ static void rkl_cleanup_cacheSpinLockStatus(volatile NSUInteger *rkl_cacheSpinLo
   NSUInteger        rkl_cacheSpinLockStatus     = *rkl_cacheSpinLockStatusPtr;
   
   if(RKL_EXPECTED((rkl_cacheSpinLockStatus & RKLUnlockedCacheSpinLock) == 0UL, 0L) && RKL_EXPECTED((rkl_cacheSpinLockStatus & RKLLockedCacheSpinLock) != 0UL, 1L)) {
-    if(rkl_cacheSpinLock != (OSSpinLock)0) {
+    if(rkl_cacheSpinLockHeld) {
       if(didPrintForcedUnlockWarning == 0UL) { didPrintForcedUnlockWarning = 1UL; NSLog(@"[RegexKitLite] Unusual condition detected: Recorded that rkl_cacheSpinLock was locked, but for some reason it was not unlocked.  Forcibly unlocking rkl_cacheSpinLock. Set a breakpoint at rkl_debugCacheSpinLock to debug. This warning is only printed once."); }
       rkl_debugCacheSpinLock(); // Since this is an unusual condition, offer an attempt to catch it before we unlock.
-      OSSpinLockUnlock(&rkl_cacheSpinLock);
+      rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
     } else {
       if(didPrintNotLockedWarning    == 0UL) { didPrintNotLockedWarning    = 1UL; NSLog(@"[RegexKitLite] Unusual condition detected: Recorded that rkl_cacheSpinLock was locked, but for some reason it was not unlocked, yet rkl_cacheSpinLock is currently not locked? Set a breakpoint at rkl_debugCacheSpinLock to debug. This warning is only printed once."); }
       rkl_debugCacheSpinLock();
@@ -1109,7 +1110,7 @@ static id rkl_performRegexOp(id self, SEL _cmd, RKLRegexOp regexOp, NSString *re
   
   // IMPORTANT!   Once we have obtained the lock, code MUST exit via 'goto exitNow;' to unlock the lock!  NO EXCEPTIONS!
   // ----------
-  OSSpinLockLock(&rkl_cacheSpinLock); // Grab the lock and get cache entry.
+  os_unfair_lock_lock(&rkl_cacheSpinLock); rkl_cacheSpinLockHeld = YES; // Grab the lock and get cache entry.
   rkl_cacheSpinLockStatus |= RKLLockedCacheSpinLock;
   rkl_dtrace_incrementEventID();
   
@@ -1163,7 +1164,7 @@ static id rkl_performRegexOp(id self, SEL _cmd, RKLRegexOp regexOp, NSString *re
   }
   
 exitNow:
-  OSSpinLockUnlock(&rkl_cacheSpinLock);
+  rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
   rkl_cacheSpinLockStatus |= RKLUnlockedCacheSpinLock; // Warning about rkl_cacheSpinLockStatus never being read can be safely ignored.
   
   if(RKL_EXPECTED(status     > U_ZERO_ERROR, 0L) && RKL_EXPECTED(exception == NULL, 0L)) { exception = rkl_NSExceptionForRegex(regexString, options, NULL, status); } // If we had a problem, prepare an exception to be thrown.
@@ -1644,12 +1645,12 @@ static NSUInteger rkl_isRegexValid(id self, SEL _cmd, NSString *regex, RKLRegexO
   if((error != NULL) && (*error != NULL)) { *error = NULL; }
   if(RKL_EXPECTED(regex == NULL, 0L)) { RKL_RAISE_EXCEPTION(NSInvalidArgumentException, @"The regular expression argument is NULL."); }
   
-  OSSpinLockLock(&rkl_cacheSpinLock);
+  os_unfair_lock_lock(&rkl_cacheSpinLock); rkl_cacheSpinLockHeld = YES;
   rkl_cacheSpinLockStatus |= RKLLockedCacheSpinLock;
   rkl_dtrace_incrementEventID();
   if(RKL_EXPECTED((cachedRegex = rkl_getCachedRegex(regex, options, error, &exception)) != NULL, 1L)) { gotCachedRegex = 1UL; captureCount = cachedRegex->captureCount; }
   cachedRegex = NULL;
-  OSSpinLockUnlock(&rkl_cacheSpinLock);
+  rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
   rkl_cacheSpinLockStatus |= RKLUnlockedCacheSpinLock; // Warning about rkl_cacheSpinLockStatus never being read can be safely ignored.
   
   if(captureCountPtr != NULL) { *captureCountPtr = captureCount; }
@@ -1660,7 +1661,7 @@ static NSUInteger rkl_isRegexValid(id self, SEL _cmd, NSString *regex, RKLRegexO
 #pragma mark Functions used for clearing and releasing resources for various internal data structures
 
 static void rkl_clearStringCache(void) {
-  RKLCAbortAssert(rkl_cacheSpinLock != (OSSpinLock)0);
+  RKLCAbortAssert(rkl_cacheSpinLockHeld);
   rkl_lastCachedRegex = NULL;
   NSUInteger x = 0UL;
   for(x = 0UL; x < _RKL_SCRATCH_BUFFERS;    x++) { if(rkl_scratchBuffer[x] != NULL) { rkl_scratchBuffer[x] = rkl_free(&rkl_scratchBuffer[x]); }  }
@@ -1825,7 +1826,7 @@ static id rkl_performEnumerationUsingBlock(id self, SEL _cmd,
 
   // IMPORTANT!   Once we have obtained the lock, code MUST exit via 'goto exitNow;' to unlock the lock!  NO EXCEPTIONS!
   // ----------
-  OSSpinLockLock(&rkl_cacheSpinLock); // Grab the lock and get cache entry.
+  os_unfair_lock_lock(&rkl_cacheSpinLock); rkl_cacheSpinLockHeld = YES; // Grab the lock and get cache entry.
   rkl_cacheSpinLockStatus |= RKLLockedCacheSpinLock;
   rkl_dtrace_incrementAndGetEventID(thisDTraceEventID);
   
@@ -1844,7 +1845,7 @@ static id rkl_performEnumerationUsingBlock(id self, SEL _cmd,
 
 exitNow:
   if((rkl_cacheSpinLockStatus & RKLLockedCacheSpinLock) != 0UL) { // In case we arrive at exitNow: without obtaining the rkl_cacheSpinLock.
-    OSSpinLockUnlock(&rkl_cacheSpinLock);
+    rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
     rkl_cacheSpinLockStatus |= RKLUnlockedCacheSpinLock; // Warning about rkl_cacheSpinLockStatus never being read can be safely ignored.
   }
 
@@ -2179,10 +2180,10 @@ exitNow2:
 + (void)RKL_METHOD_PREPEND(clearStringCache)
 {
   volatile NSUInteger RKL_CLEANUP(rkl_cleanup_cacheSpinLockStatus) rkl_cacheSpinLockStatus = 0UL;
-  OSSpinLockLock(&rkl_cacheSpinLock);
+  os_unfair_lock_lock(&rkl_cacheSpinLock); rkl_cacheSpinLockHeld = YES;
   rkl_cacheSpinLockStatus |= RKLLockedCacheSpinLock;
   rkl_clearStringCache();
-  OSSpinLockUnlock(&rkl_cacheSpinLock);
+  rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
   rkl_cacheSpinLockStatus |= RKLUnlockedCacheSpinLock; // Warning about rkl_cacheSpinLockStatus never being read can be safely ignored.
 }
 
@@ -2279,8 +2280,8 @@ exitNow2:
 
   CFIndex    selfLength = CFStringGetLength((CFStringRef)self);
   CFHashCode selfHash   = CFHash((CFTypeRef)self);
-  
-  OSSpinLockLock(&rkl_cacheSpinLock);
+
+  os_unfair_lock_lock(&rkl_cacheSpinLock); rkl_cacheSpinLockHeld = YES;
   rkl_cacheSpinLockStatus |= RKLLockedCacheSpinLock;
   rkl_dtrace_incrementEventID();
 
@@ -2292,7 +2293,7 @@ exitNow2:
   for(idx = 0UL; idx < _RKL_LRU_CACHE_SET_WAYS; idx++) { RKLBuffer *buffer = &rkl_lruFixedBuffer[idx];   if((buffer->string != NULL) && ((buffer->string == (CFStringRef)self) || ((buffer->length == selfLength) && (buffer->hash == selfHash)))) { rkl_clearBuffer(buffer, 0UL); } }
   for(idx = 0UL; idx < _RKL_LRU_CACHE_SET_WAYS; idx++) { RKLBuffer *buffer = &rkl_lruDynamicBuffer[idx]; if((buffer->string != NULL) && ((buffer->string == (CFStringRef)self) || ((buffer->length == selfLength) && (buffer->hash == selfHash)))) { rkl_clearBuffer(buffer, 0UL); } }
 
-  OSSpinLockUnlock(&rkl_cacheSpinLock);
+  rkl_cacheSpinLockHeld = NO; os_unfair_lock_unlock(&rkl_cacheSpinLock);
   rkl_cacheSpinLockStatus |= RKLUnlockedCacheSpinLock; // Warning about rkl_cacheSpinLockStatus never being read can be safely ignored.
 }
 

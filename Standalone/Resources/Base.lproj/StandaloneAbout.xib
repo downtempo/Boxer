@@ -110,14 +110,13 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="NSApplicationIcon" id="65"/>
                             </imageView>
-                            <webView fixedFrame="YES" maintainsBackForwardList="NO" translatesAutoresizingMaskIntoConstraints="NO" id="98">
+                            <wkWebView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="98">
                                 <rect key="frame" x="0.0" y="0.0" width="340" height="111"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                <webPreferences key="preferences" identifier="CreditsView" defaultFontSize="14" defaultFixedFontSize="14" minimumFontSize="0" plugInsEnabled="NO" javaEnabled="NO" javaScriptEnabled="NO" javaScriptCanOpenWindowsAutomatically="NO" loadsImagesAutomatically="NO" allowsAnimatedImages="NO" allowsAnimatedImageLooping="NO"/>
                                 <connections>
-                                    <outlet property="policyDelegate" destination="-2" id="101"/>
+                                    <outlet property="navigationDelegate" destination="-2" id="101"/>
                                 </connections>
-                            </webView>
+                            </wkWebView>
                         </subviews>
                     </customView>
                 </subviews>

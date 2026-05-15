@@ -10,7 +10,6 @@
 #import "BXSimpleDriveImport.h"
 #import "ADBBinCueImage.h"
 #import "BXDrive.h"
-#import "RegexKitLite.h"
 #import "NSURL+ADBFilesystemHelpers.h"
 #import "NSFileManager+ADBUniqueFilenames.h"
 
