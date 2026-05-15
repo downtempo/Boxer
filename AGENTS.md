@@ -16,6 +16,16 @@ If that file is missing in this checkout, stop and ask the developer for the act
 
 Always ask the developer if scope is unclear. Do not improvise additional changes outside the assigned plan item.
 
+## Session start: verify git hooks are active
+
+Run before the first commit (one-time per clone/worktree — `core.hooksPath` is local config, not committed):
+
+```bash
+git config --get core.hooksPath || tools/setup-git-hooks.sh
+```
+
+Until this runs, the `commit-msg`/`pre-commit` hooks are inactive: forbidden attribution patterns and protected-branch commits land unchecked.
+
 ## Before editing
 
 At the start of every task, identify:
