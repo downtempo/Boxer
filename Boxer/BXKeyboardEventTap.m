@@ -104,6 +104,14 @@ static CGEventRef _handleEventFromTap(CGEventTapProxy proxy, CGEventType type, C
 
 + (BOOL) canCaptureKeyEvents
 {
+    // Silent check: do NOT prompt. Startup, KVO observers, and Preferences-pane UI
+    // status reads call this and must not trigger an OS-level Accessibility prompt.
+    return AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)@{(__bridge NSString*)kAXTrustedCheckOptionPrompt: @NO});
+}
+
++ (BOOL) requestKeyEventCapturePermission
+{
+    // Prompts the user if not yet trusted. Call only on explicit user intent.
     return AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)@{(__bridge NSString*)kAXTrustedCheckOptionPrompt: @YES});
 }
 

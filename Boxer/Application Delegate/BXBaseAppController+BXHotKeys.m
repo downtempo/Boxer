@@ -389,6 +389,13 @@
 
 - (IBAction) showSystemAccessibilityControls: (id)sender
 {
+    // The user has actively requested to grant hotkey capture permission.
+    // Fire macOS's permission prompt (modern path) before falling back to opening
+    // the Privacy preferences pane manually. On 10.9+ this displays a system dialog
+    // with an "Open System Settings" button, which is the path Apple has been steering
+    // apps toward.
+    [BXKeyboardEventTap requestKeyEventCapturePermission];
+
     if ([self.class hasPerAppAccessibilityControls])
         [self _showPerAppAccessibilityControls];
     else
