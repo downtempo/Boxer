@@ -124,6 +124,61 @@ These each warrant their own focused PR with manual testing. A cost-efficient im
 
 ---
 
+## Third-party integration architecture
+
+The plan above updates *which* third-party components ship; this section is
+about *how* they are integrated. Boxer currently uses **five inconsistent
+mechanisms**, and that inconsistency is itself debt — it is the multiplier
+on every C-item's difficulty (the OpenEmuShaders CMake/dirty-submodule
+ordeal, un-scopeable DOSBox warnings, floating SPM deps, unidentifiable
+copied-in source all trace to a mechanism choice, not a version).
+
+| # | Mechanism | Components | Auditability |
+|---|---|---|---|
+| 1 | Submodule source compiled into first-party targets | DOSBox-Staging | SHA only; not isolatable as a unit |
+| 2 | Submodule as nested `.xcodeproj` → framework | MT32Emu, DDHidLib, OpenEmuShaders | SHA + its own build system (worst friction) |
+| 3 | SPM (`XCRemoteSwiftPackageReference`) | CwlDemangle, Sparkle | Good — pinned; lockfile now tracked |
+| 4 | Committed prebuilt binary framework | SDL2, SDL2_net | Opaque — binary in git, version unknowable |
+| 5 | Raw source copied in, no upstream link | RegexKitLite, BGHUDAppKit, MCAdditions, YRK, loose `.h/.m` | None — origin/version unrecoverable for several (e.g. `NSData+HexStrings` ships with no copyright at all) |
+
+A standing provenance manifest was deliberately **not** created: it would
+be ~60% "unknown", rot against reality, duplicate git history for the one
+local-mod worth recording, and be obsoleted by mechanism convergence
+(SPM pins record origin/version/license verifiably and automatically).
+The provenance investigation's durable conclusions live structurally in
+this section and in Bundle D (D4 identifies the unknowns; D5 captures
+that `ADBToolkit` is first-party, miscategorized under `Other Sources/`).
+
+**Principle going forward:** SPM pinned to a tag with a committed
+lockfile (mechanism #3) is the auditable default. Prefer it. Treat
+mechanisms #2 and #5 as the ones to *eliminate over time*, not extend.
+**C1/C2/C3 must be integration-aware:** each should ask "should this stay
+in its current mechanism, or move to #3 while we're in here?" rather than
+just bumping a pinned SHA — otherwise three C-items independently
+re-fight the same structural friction.
+
+### 🔴 Bundle D: Converge third-party integration (strategic, deferred)
+
+Not a near-term bundle. Wholesale convergence of the five mechanisms
+toward one (SPM-pinned-with-lockfile where possible; submodule-at-tag
+otherwise). Multi-week, interleaves with C1/C2/C3, and should only be
+undertaken deliberately — doing it half-way (per-component, ad hoc) is
+strictly worse than not starting. Sketch, not commitments:
+
+| # | Item | Notes |
+|---|---|---|
+| D1 | Move SPM deps to tagged versions (not branch-tracked) | CwlDemangle is now `branch=master`; Sparkle is a range. Pin to tags; lockfile already tracked (depends on the committed-`Package.resolved` work). |
+| D2 | Re-evaluate mechanism #2 (nested-subproject submodules) | As C1/C2/C0 land, decide whether MT32Emu/OpenEmuShaders/DDHidLib should become SPM packages or stay submodules-at-tag. DDHidLib is retired by C0 — one fewer. |
+| D3 | Replace committed binary SDL frameworks (#4) with a reproducible source/SPM build or a recorded, scripted fetch | Removes opaque binaries from git; makes SDL version auditable and updatable. Interacts with A12 (arch slimming). |
+| D4 | Resolve every mechanism-#5 component | First identify origin/version where unrecorded (no standing manifest — record it in the resolving commit/PR, not a rot-prone doc). Dispositions: YRK→B3, BGHUDAppKit→(B7 cross-link), RegexKitLite→explicit decision (remove vs. keep-and-own), MCAdditions→audit (snippet from a defunct tutorial), `NSData+HexStrings`→identify or replace (no copyright/license in source), ScriptingBridge headers (`Finder.h`, `SystemPreferences.h`)→regenerate-on-demand, not vendored. |
+| D5 | Recategorize `ADBToolkit` | First-party (Alun Bestor, Boxer's author) — does not belong under `Other Sources/`. Move/relabel so "third-party" actually means third-party. |
+
+**Bundle D is fork-strategic (🔴):** it changes project structure, not
+upstream-cherry-pickable behavior. Land after the upstream-friendly work;
+keep it off the 🟢 themed branches.
+
+---
+
 
 ### Security note
 
