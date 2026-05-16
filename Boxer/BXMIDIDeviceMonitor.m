@@ -224,19 +224,19 @@ void _didReceiveMIDINotification(const MIDINotification *message, void *context)
                 if (errCode == noErr)
                 {
                     NSNumber *storedID = [NSNumber numberWithInteger: destinationID];
-                    if ([_discoveredMT32s containsObject: storedID])
-                    {
-                        //Mutate the backing array directly under our lock, emitting KVO
-                        //notifications manually. We can't use mutableArrayValueForKey:
-                        //here: with no indexed accessors it routes through the locked
-                        //discoveredMT32s getter, which would recursively re-enter the
-                        //non-recursive os_unfair_lock and deadlock.
-                        [self willChangeValueForKey: @"discoveredMT32s"];
-                        os_unfair_lock_lock(&_discoveredMT32sLock);
-                        [_discoveredMT32s removeObject: storedID];
-                        os_unfair_lock_unlock(&_discoveredMT32sLock);
-                        [self didChangeValueForKey: @"discoveredMT32s"];
-                    }
+                    //Membership test and removal must share one lock acquisition:
+                    //-containsObject: outside the lock was an unsynchronized read of
+                    //_discoveredMT32s racing the add path's locked mutation on another
+                    //CoreMIDI thread. KVO is emitted unconditionally (symmetric with
+                    //the add path); a no-op removal is a harmless redundant
+                    //notification for the sole options:0 observer. mutableArrayValueForKey:
+                    //is still avoided: with no indexed accessors it would re-enter the
+                    //locked getter and deadlock the non-recursive lock.
+                    [self willChangeValueForKey: @"discoveredMT32s"];
+                    os_unfair_lock_lock(&_discoveredMT32sLock);
+                    [_discoveredMT32s removeObject: storedID];
+                    os_unfair_lock_unlock(&_discoveredMT32sLock);
+                    [self didChangeValueForKey: @"discoveredMT32s"];
                 }
             }
         }
