@@ -2,10 +2,10 @@
 
 Tracks measurable deltas across the Phase 2 modernization bundles. Each
 section appends a new snapshot from `tools/bench.sh`. Don't edit the
-generated snapshots by hand — re-run the script and paste fresh output.
+generated snapshots by hand - re-run the script and paste fresh output.
 
 For runtime/energy measurements (frame pacing, power, battery drain),
-follow the procedure in [the plan](/.claude/plans/optimized-giggling-coral.md)'s
+follow the procedure in [the plan](docs/modernization-plan.md)'s
 **Verification & benchmarks** section; record results under
 [Runtime captures](#runtime-captures) below.
 
@@ -15,13 +15,13 @@ follow the procedure in [the plan](/.claude/plans/optimized-giggling-coral.md)'s
 
 | Date | Label | git rev | Notes |
 |------|-------|---------|-------|
-| 2026-05-14 | post Phase 1, pre Bundle A | `2c3e5c66` | Baseline after the show-stopper fixes (OSSpinLock, NSAutoreleasePool, WebView, DLSSynth, deployment target 26.0, entitlements populated, loguru case fix). All Phase 1 deprecated-API counts already at 0. Remaining work tracked by `@available` (15), `@synchronized` (21), `NSInvocation` (5), Carbon (4), RegexKitLite-using files (32), Tahoe TCC strings (all missing), Hardened Runtime inconsistency, SDL frameworks still universal. |
+| 2026-05-14 | post Phase 1, pre Bundle A | `2c3e5c66` | Baseline after the show-stopper fixes (OSSpinLock, NSAutoreleasePool, WebView, DLSSynth, deployment target 26.0, entitlements populated, loguru case fix). All Phase 1 deprecated-API counts already at 0. Remaining work tracked by `@available` (15), `@synchronized` (21), `NSInvocation` (5), Carbon (4), RegexKitLite-using files (32), Tahoe TCC strings (all missing), Hardened Runtime inconsistency, SDL frameworks still universal. Generated with the old static TCC schema, before Standalone plist checks, `NSNetworkVolumesUsageDescription`, and the corrected `LSSupportsGameMode` key were added to `tools/bench.sh`. |
 
 ---
 
-## 2026-05-14 — post Phase 1, pre Bundle A
+## 2026-05-14 - post Phase 1, pre Bundle A
 
-# Boxer benchmark — post Phase 1, pre Bundle A
+# Boxer benchmark - post Phase 1, pre Bundle A
 
 - **timestamp:** 2026-05-14 12:04:27 PDT
 - **git:** `2c3e5c66` on `claude/nice-goldwasser-ab5e8b` (dirty)
@@ -106,5 +106,5 @@ Format: one subsection per capture session. Capture procedure is in the plan's
 **Verification & benchmarks** section. Record game name, scene, duration, and
 the metrics observed.
 
-_(no runtime captures yet — first one happens after Bundle A is merged, or
+_(no runtime captures yet - first one happens after Bundle A is merged, or
 before for an honest "before" measurement)_
