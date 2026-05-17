@@ -7,6 +7,7 @@
 
 
 #import "BXStandaloneAboutController.h"
+#import <WebKit/WKNavigationAction.h>
 #import "BXThemes.h"
 #import "NSShadow+ADBShadowExtensions.h"
 #import "BXStandaloneAppController.h"
