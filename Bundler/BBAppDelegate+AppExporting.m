@@ -18,7 +18,7 @@ NSString * const BBAppExportCodeSigningIdentityKey = @"BBAppExportCodeSigningIde
 
 - (void) createAppAtDestinationURL: (NSURL *)destinationURL completion: (void(^)(NSURL *appURL, NSError *error))completionHandler
 {
-    dispatch_queue_t completionHandlerQueue = dispatch_get_current_queue();
+    dispatch_queue_t completionHandlerQueue = dispatch_get_main_queue();
     
     dispatch_queue_t queue = dispatch_queue_create("AppCreationQueue", DISPATCH_QUEUE_SERIAL);
     dispatch_async(queue, ^{

@@ -1792,7 +1792,6 @@
 		9FB4538C16442CDD00BCF63B /* Boxer Bundler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Boxer Bundler.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FB4539216442CDD00BCF63B /* Boxer Bundler-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Boxer Bundler-Info.plist"; sourceTree = "<group>"; };
 		9FB4539616442CDD00BCF63B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		9FB4539816442CDD00BCF63B /* Boxer Bundler-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Boxer Bundler-Prefix.pch"; sourceTree = "<group>"; };
 		9FB4539C16442CDD00BCF63B /* BBAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BBAppDelegate.h; sourceTree = "<group>"; };
 		9FB4539D16442CDD00BCF63B /* BBAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BBAppDelegate.m; sourceTree = "<group>"; };
 		9FB453AC16442D2900BCF63B /* UserDefaults.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = UserDefaults.plist; sourceTree = "<group>"; };
@@ -3495,7 +3494,6 @@
 				55C5F8022D35D4D1001210F1 /* Localizable.xcstrings */,
 				9FB4539216442CDD00BCF63B /* Boxer Bundler-Info.plist */,
 				9FB4539616442CDD00BCF63B /* main.m */,
-				9FB4539816442CDD00BCF63B /* Boxer Bundler-Prefix.pch */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -5239,8 +5237,6 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bundler/Boxer Bundler-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -5277,8 +5273,6 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bundler/Boxer Bundler-Prefix.pch";
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				INFOPLIST_FILE = "$(SRCROOT)/Bundler/Boxer Bundler-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -5536,9 +5530,9 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		55D432012504BB65008515E1 /* XCRemoteSwiftPackageReference "CwlDemangle" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MaddTheSane/CwlDemangle.git";
+			repositoryURL = "https://github.com/mattgallagher/CwlDemangle.git";
 			requirement = {
-				branch = swift5Compat;
+				branch = master;
 				kind = branch;
 			};
 		};

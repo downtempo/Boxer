@@ -216,27 +216,31 @@ private func imageHasTransparency(_ image: NSImage) -> Bool {
 					break
 				}
 			}
-		} else {
-			let imageSize = image.size
+		} else if let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+			//The last representation isn't an NSBitmapImageRep (e.g. a PDF or vector
+			//rep): render it to a bitmap rep and sample it identically to the branch
+			//above. Replaces the deprecated lockFocus()/NSReadPixel path
+			//(NSReadPixel was deprecated in macOS 10.14).
+			let bir = NSBitmapImageRep(cgImage: cgImage)
+			let imageWidth = bir.pixelsWide
+			let imageHigh = bir.pixelsHigh
 			
 			//Test 5 pixels in an X pattern: each corner and right in the center of the image.
-			let testPoints = [
-				NSMakePoint(0,						0),
-				NSMakePoint(imageSize.width - 1.0,	0),
-				NSMakePoint(0,						imageSize.height - 1.0),
-				NSMakePoint(imageSize.width - 1.0,	imageSize.height - 1.0),
-				NSMakePoint(imageSize.width * 0.5,	imageSize.height * 0.5)
+			let testPoints: [(x: Int, y: Int)] = [
+				(0,					0),
+				(imageWidth - 1,	0),
+				(0,					imageHigh - 1),
+				(imageWidth - 1,	imageHigh - 1),
+				(imageWidth / 2,	imageHigh / 2)
 			]
 			
-			image.lockFocus()
-			for point in testPoints {
+			for (x, y) in testPoints {
 				//If any of the pixels appears to be translucent, then stop looking further.
-				if let pixel = NSReadPixel(point), pixel.alphaComponent < 0.9 {
+				if let pixel = bir.colorAt(x: x, y: y), pixel.alphaComponent < 0.9 {
 					hasTranslucentPixels = true
 					break
 				}
 			}
-			image.unlockFocus()
 		}
 	}
 

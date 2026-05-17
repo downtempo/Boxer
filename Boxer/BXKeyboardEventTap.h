@@ -29,11 +29,19 @@ typedef NS_ENUM(NSInteger, BXKeyboardEventTapStatus) {
 /// (and potentially swallow them) before they reach the system and trigger system-wide hotkey functions.
 @interface BXKeyboardEventTap : NSObject
 
-/// Whether OS X has granting the application permission to capture keyup and keydown events.
+/// Whether the application has been granted permission to capture keyup and keydown events.
 /// This will be @c YES if Boxer has been given accessibility control in the Security & Privacy preferences pane.
+/// @note This is a silent check: it does NOT prompt the user. Use @c requestKeyEventCapturePermission
+/// when the user has actively asked to enable hotkey capture and you want macOS to display its
+/// permission prompt.
 /// @note Even if this returns NO, the event tap may still be able to attach: in which case it will only catch media key events
 /// and not all keyboard events.
 + (BOOL) canCaptureKeyEvents;
+
+/// Like @c canCaptureKeyEvents, but also asks macOS to display its permission prompt if the application
+/// is not yet trusted. Call this only in response to user intent (e.g. when the user enables hotkey
+/// capture in Preferences), not at app launch.
++ (BOOL) requestKeyEventCapturePermission;
 
 /// The delegate whom we will ask for event-capture decisions.
 @property (weak) id <BXKeyboardEventTapDelegate> delegate;
