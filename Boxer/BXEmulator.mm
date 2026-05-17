@@ -9,6 +9,9 @@
 #import "NSObject+ADBPerformExtensions.h"
 #import <objc/runtime.h>
 
+extern "C" void *objc_autoreleasePoolPush(void);
+extern "C" void objc_autoreleasePoolPop(void *pool);
+
 #import <SDL2/SDL.h>
 #import "cpu.h"
 #import "control.h"

@@ -82,9 +82,9 @@
     // A missing or unloadable system soundfont is non-fatal: the engine runs silent.
     NSURL *defaultFont = [self.class defaultSoundFontURL];
     if (defaultFont && [_sampler loadSoundBankInstrumentAtURL: defaultFont
+                                                      program: 0
                                                       bankMSB: 0x79
                                                       bankLSB: 0
-                                                     presetID: 0
                                                         error: NULL])
     {
         self.soundFontURL = defaultFont;
@@ -199,9 +199,9 @@
     if (![URL isEqual: self.soundFontURL])
     {
         BOOL success = [_sampler loadSoundBankInstrumentAtURL: URL
+                                                      program: 0
                                                       bankMSB: 0x79
                                                       bankLSB: 0
-                                                     presetID: 0
                                                         error: outError];
         if (!success)
         {
@@ -209,9 +209,9 @@
             if (self.soundFontURL)
             {
                 [_sampler loadSoundBankInstrumentAtURL: self.soundFontURL
+                                               program: 0
                                                bankMSB: 0x79
                                                bankLSB: 0
-                                              presetID: 0
                                                  error: NULL];
             }
             return NO;
