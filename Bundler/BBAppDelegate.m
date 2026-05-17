@@ -558,6 +558,11 @@ NSString * const kBBValidationErrorDomain = @"net.washboardabs.boxer-bundler.val
     [self.helpLinks removeObjectAtIndex: index];
 }
 
+- (BOOL) _helpLinkIndexesAreValid: (NSIndexSet *)indexes
+{
+    return indexes.count == 0 || indexes.lastIndex < self.helpLinks.count;
+}
+
 - (BOOL) tableView: (NSTableView *)tableView writeRowsWithIndexes: (NSIndexSet *)rowIndexes
       toPasteboard: (NSPasteboard *)pboard
 {
@@ -565,7 +570,13 @@ NSString * const kBBValidationErrorDomain = @"net.washboardabs.boxer-bundler.val
     [tableView registerForDraggedTypes: dragTypes];
     [pboard declareTypes: dragTypes owner: self];
     
-    NSData *rowIndexData = [NSKeyedArchiver archivedDataWithRootObject: rowIndexes];
+    NSError *archiveError = nil;
+    NSData *rowIndexData = [NSKeyedArchiver archivedDataWithRootObject: rowIndexes
+                                                 requiringSecureCoding: YES
+                                                                 error: &archiveError];
+    if (!rowIndexData)
+        return NO;
+
     [pboard setData: rowIndexData forType: kBBRowIndexSetDropType];
     
     return YES;
@@ -594,7 +605,12 @@ NSString * const kBBValidationErrorDomain = @"net.washboardabs.boxer-bundler.val
     
     if (rowData)
     {
-        NSIndexSet *rowIndexes = [NSKeyedUnarchiver unarchiveObjectWithData: rowData];
+        NSError *unarchiveError = nil;
+        NSIndexSet *rowIndexes = [NSKeyedUnarchiver unarchivedObjectOfClass: [NSIndexSet class]
+                                                                    fromData: rowData
+                                                                       error: &unarchiveError];
+        if (!rowIndexes || ![self _helpLinkIndexesAreValid: rowIndexes])
+            return NO;
         
         NSArray *draggedItems = [self.helpLinks objectsAtIndexes: rowIndexes];
         
