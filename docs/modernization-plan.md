@@ -357,6 +357,14 @@ themed PR:
    result, never from the standalone themed branch.
 5. Discard the worktree.
 
+Use `tools/premerge-check.sh <topic-branch>` for the automated version of
+this workflow. The script uses a managed integration worktree, resets it to
+fresh `macos26`, syncs submodules before and after the trial merge, writes the
+bench snapshot to an artifact directory outside the topic branch, and runs
+`tools/build.sh` there. If the managed worktree is dirty from an interrupted
+run, inspect it or rerun with `--reset-managed`. Use `--deep-clean-shaders`
+when stale ignored OpenEmuShaders build products are suspected.
+
 Optionally keep a separate static `maddsV2` snapshot if upstream-only
 deltas matter: the current `BENCHMARKS.md` baseline is explicitly a
 Phase-1 lineage artifact and is not comparable to a `maddsV2`-derived

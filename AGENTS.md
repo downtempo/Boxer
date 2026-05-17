@@ -303,6 +303,14 @@ Before and after each PR, run:
 
 Edit `BENCHMARKS.md`'s snapshot index at the top to add the new dated row. The static markers in the snapshot, including deprecated API counts, TCC plist coverage, and build settings, should move in the expected direction. If a marker moved unexpectedly, investigate before merging.
 
+Before opening or merging a `maddsV2`-derived topic branch into `macos26`, prefer:
+
+```bash
+tools/premerge-check.sh <topic-branch>
+```
+
+This runs the bench snapshot and requested build in a managed `macos26` integration worktree. Keep generated benchmark artifacts in the integration context, not on upstreamable topic branches.
+
 The `@available(macOS <26)` count is expected to remain nonzero unless the active plan item explicitly changes it. Do not treat a nonzero `@available` count as a failure.
 
 Run the narrowest useful build, plus any touched target:
