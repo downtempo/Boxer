@@ -1,5 +1,5 @@
 #!/bin/bash
-# bench.sh — static measurement snapshot for the Boxer modernization work.
+# bench.sh - static measurement snapshot for the Boxer modernization work.
 #
 # Usage:   tools/bench.sh [label]
 # Output:  Markdown report on stdout (redirect to file).
@@ -43,7 +43,7 @@ grep_count() {
 }
 
 cat <<EOF
-# Boxer benchmark — $LABEL
+# Boxer benchmark - $LABEL
 
 - **timestamp:** $timestamp
 - **git:** \`$git_rev\` on \`$git_branch\` ($git_dirty)
@@ -181,12 +181,21 @@ check_plist_key() {
     echo "❌"
   fi
 }
-echo "| \`NSRemovableVolumesUsageDescription\` in Info.plist | $(check_plist_key NSRemovableVolumesUsageDescription Info.plist) |"
-echo "| \`NSDesktopFolderUsageDescription\` in Info.plist | $(check_plist_key NSDesktopFolderUsageDescription Info.plist) |"
-echo "| \`NSDocumentsFolderUsageDescription\` in Info.plist | $(check_plist_key NSDocumentsFolderUsageDescription Info.plist) |"
-echo "| \`NSDownloadsFolderUsageDescription\` in Info.plist | $(check_plist_key NSDownloadsFolderUsageDescription Info.plist) |"
-echo "| \`NSInputMonitoringUsageDescription\` in Info.plist | $(check_plist_key NSInputMonitoringUsageDescription Info.plist) |"
-echo "| \`LSPrefersGameMode\` in Info.plist | $(check_plist_key LSPrefersGameMode Info.plist) |"
+app_plists=(Info.plist "Standalone/Boxer Standalone-Info.plist")
+usage_keys=(
+  NSRemovableVolumesUsageDescription
+  NSNetworkVolumesUsageDescription
+  NSDesktopFolderUsageDescription
+  NSDocumentsFolderUsageDescription
+  NSDownloadsFolderUsageDescription
+  NSInputMonitoringUsageDescription
+  LSSupportsGameMode
+)
+for plist in "${app_plists[@]}" ; do
+  for key in "${usage_keys[@]}" ; do
+    echo "| \`$key\` in \`$plist\` | $(check_plist_key "$key" "$plist") |"
+  done
+done
 
 ent_size=$(wc -c < Boxer/Boxer.entitlements 2>/dev/null | tr -d ' ')
 if [[ "$ent_size" -gt 200 ]] ; then ent_ok="✅" ; else ent_ok="❌ (empty/stub)" ; fi
@@ -215,16 +224,31 @@ if [[ $WITH_BUILD -eq 1 ]] ; then
 
 EOF
   build_log=$(mktemp)
-  if xcodebuild -workspace Boxer.xcworkspace -scheme Boxer -configuration Release \
-                -derivedDataPath ./build/bench-derived clean build \
-                CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO \
-                > "$build_log" 2>&1 ; then
+  build_scheme="${BOXER_BUILD_SCHEME:-Boxer CI}"
+  build_args=(--scheme "$build_scheme"
+              --configuration Release
+              --derived-data-path ./build/bench-derived
+              --clean
+              --no-sign
+              --quiet)
+  if [[ "${BOXER_BUILD_TIMING:-0}" != "0" ]] ; then
+    build_args+=(--timing)
+  fi
+
+  if tools/build.sh "${build_args[@]}" > "$build_log" 2>&1 ; then
     echo "- **Status:** ✅ built clean"
   else
     echo "- **Status:** ❌ build failed (see log)"
   fi
-  warn=$(grep -cE "warning:" "$build_log" 2>/dev/null || echo 0)
-  err=$(grep -cE "error:" "$build_log" 2>/dev/null || echo 0)
+  echo "- **Scheme:** $build_scheme"
+  build_jobs=$(grep -m 1 "^Xcode jobs:" "$build_log" 2>/dev/null | sed -E 's/^Xcode jobs: //')
+  cmake_policy=$(grep -m 1 "^CMAKE_POLICY_VERSION_MINIMUM:" "$build_log" 2>/dev/null | sed -E 's/^CMAKE_POLICY_VERSION_MINIMUM: //')
+  [[ -z "$build_jobs" ]] && build_jobs="unknown"
+  [[ -z "$cmake_policy" ]] && cmake_policy="unknown"
+  echo "- **Parallel jobs:** $build_jobs"
+  echo "- **CMake policy minimum:** $cmake_policy"
+  warn=$(grep -cE "warning:" "$build_log" 2>/dev/null || true)
+  err=$(grep -cE "error:" "$build_log" 2>/dev/null || true)
   echo "- **Warnings:** $warn"
   echo "- **Errors:** $err"
   if [[ -d "build/bench-derived/Build/Products/Release/Boxer.app" ]] ; then
