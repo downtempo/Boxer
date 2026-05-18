@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run a topic branch through a managed macos26 integration worktree.
+# Run a topic branch through a managed product-branch integration worktree.
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ usage() {
   cat <<'EOF'
 Usage: tools/premerge-check.sh [options] [topic-ref] [-- extra-build-args...]
 
-Runs a trial merge of topic-ref into a managed macos26 integration worktree,
+Runs a trial merge of topic-ref into a managed product-branch integration worktree,
 then runs the static benchmark snapshot and the requested build there.
 
 If topic-ref is omitted, the current branch is used. The current branch must be
@@ -19,7 +19,7 @@ committed cleanly because this script merges refs, not uncommitted working-tree
 changes.
 
 Options:
-  --base REF                 Integration base branch (default: macos26)
+  --base REF                 Integration base branch (default: macos11)
   --remote NAME              Remote used for fresh base fetch (default: origin)
   --no-fetch                 Use the local base ref without fetching
   --worktree PATH            Managed integration worktree path
@@ -144,7 +144,7 @@ cleanup_managed_worktree() {
   sync_submodules "$path"
 }
 
-BASE="macos26"
+BASE="macos11"
 REMOTE="origin"
 FETCH=1
 RUN_BUILD=1

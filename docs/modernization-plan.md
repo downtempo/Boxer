@@ -6,12 +6,13 @@ Boxer is a long-running open-source project for running DOS games on the Mac. [B
 
 ### Goals
 
-This fork has two goals:
+This fork has three working lines:
 
-1. **Review the Boxer codebase to make updates and fixes**: ranging from "needed to compile on current macOS" to "nice-to-have improvements." This is the broadly-applicable goal: most of these changes are useful to all Boxer users, and upstream has periodic commits despite the last tagged release being on April 12, 2022, so contributing fixes back is realistic.
-2. **Narrow the compatibility target to macOS Tahoe (macOS 26) and Apple Silicon.** This is the *developer's personal preference* for this fork; users on older macOS or Intel hardware won't benefit, so this work stays in the fork and isn't proposed upstream.
+1. **`maddsV2` fork baseline**: upstream plus local scaffolding only, including AGENTS, plan docs, hooks, and build/benchmark tooling.
+2. **`macos11` broad product line**: review the Boxer codebase to make updates and fixes, ranging from "needed to compile on current macOS" to "nice-to-have improvements," with macOS 11 as the minimum target.
+3. **`macos26` latest-macOS line**: downstream of `macos11`, with macOS Tahoe (macOS 26) and Apple Silicon-only narrowing where useful.
 
-The intent is to **contribute as many of the goal-1 fixes upstream as possible**. Commit structure reflects this:
+The intent is to **contribute as many broad product fixes upstream as possible**. Commit structure reflects this:
 
 - 🟢 **Upstream-friendly items**: kept self-contained and single-purpose, with commit messages that explain the fix in upstream terms (no "because we target macOS 26"). These should cherry-pick cleanly into an upstream PR against `maddsV2`.
 - 🔴 **Fork-specific / narrowing items**: clearly labeled and landed *after* the upstream-friendly items, so a future `git log` makes it obvious which commits are personal-fork-only.
@@ -24,7 +25,7 @@ This is not a benchmark of any single AI model or vendor. Cost control matters b
 
 ### Phase status
 
-Phase 1 (already landed) was mostly goal-1 work, fixes that *must* be made for Boxer to keep building and running on modern macOS, all upstreamable. Phase 2 (this document) covers the remaining modernization, unused-code cleanup, runtime-access fixes for Tahoe TCC + Hardened Runtime, and a small number of explicitly fork-specific narrowing items.
+Phase 1 (already landed) was mostly broad product work, fixes that *must* be made for Boxer to keep building and running on modern macOS. Phase 2 (this document) covers the remaining modernization, unused-code cleanup, runtime-access fixes for current macOS privacy/signing behavior, and a small number of explicitly fork-specific narrowing items.
 
 Items below are tagged 🟢 (upstreamable) or 🔴 (fork-specific narrowing) so the commit structure can group accordingly.
 
@@ -39,7 +40,7 @@ Items below are tagged 🟢 (upstreamable) or 🔴 (fork-specific narrowing) so 
 | 3 | `WebView` → `WKWebView` migration in [BXStandaloneAboutController](Standalone/BXStandaloneAboutController.m) + [XIB](Standalone/Resources/Base.lproj/StandaloneAbout.xib) | ✅ Done |
 | 4 | `AUGraph` + `DLSSynth` → `AVAudioEngine` + Apple `MIDISynth` via `AVAudioUnitMIDIInstrument` in [BXMIDISynth.m](Boxer/BXMIDISynth.m) | ✅ Done |
 | 5 | Unused `RegexKitLite` imports removed from 3 files | ✅ Done |
-| 6 | Deployment target → `26.0` (both Debug + Release) | ✅ Done |
+| 6 | Deployment target split: `11.0` on `macos11`, `26.0` on `macos26` (both Debug + Release) | ✅ Done |
 | 7 | [Boxer.entitlements](Boxer/Boxer.entitlements) populated (JIT + library-validation) | ✅ Done |
 | 8 | Loguru `README.md` → `Readme.md` case fix in [project.pbxproj](Boxer.xcodeproj/project.pbxproj) | ✅ Done |
 
@@ -53,6 +54,8 @@ A readiness tag is attached to items (external review noted the table format
 made every row look equally ready):
 
 - **Done**: landed in a commit.
+- **In progress**: active local branch exists, not merged yet.
+- **Staged**: branch exists for later merge or upstream submission.
 - **Ready**: code-backed, scoped, verifiable as written.
 - **Investigate**: claim plausible, implementation/mechanism unknown until checked.
 - **Experiment**: outcome subjective or measurement-dependent (needs QA/capture).
@@ -103,12 +106,13 @@ Bundle A is a planning bundle, not a PR boundary. Split it into the themed branc
 |---------|-----------|-------|
 | A1, A3, A4, A6, A7, A15, A24 | Done | landed on `chore/cleanup-and-deps` |
 | A25(a) | Done | NSReadPixel; A25(b) reshaped to B20, A25(c) to B21 |
+| A8, A9, A13 | Done | landed on `build/signing-and-notarization` |
+| A14 | Done | landed on `build/share-workspace-schemes` |
+| A26 🔒 | Done | landed on `fix/bundler-pasteboard-secure-decoding` |
+| A10, A11 | In progress | active `build/privacy-usage-strings` branch |
+| A23 🔒 | Staged upstream-only | keep on `upstream/fix/cue-resource-validation` until the developer chooses to merge it into `macos11` |
 | A5 | Defer | shader-submodule bump deferred to Bundle C |
-| A8, A9, A13 | Ready after entitlement-lineage decision | hardening must be verified with populated entitlements, not the `maddsV2` stub |
-| A10, A11, A14 | Ready | scoped build / plist / scheme edits |
 | A12 🔴 | Ready | fork-only ARCHS + lipo, scoped |
-| A23 🔒 | Ready | code-backed security fix; upstream priority, own branch |
-| A26 🔒 | Ready | code-backed Bundler pasteboard hardening; own branch |
 | A17 | Investigate | frame pacing needs DOS-mode-to-refresh wiring + runtime QA |
 | A21 | Investigate | redraw-skip is a renderer-architecture change |
 | A18 | Experiment | color-space choice is a visual judgement; screenshot QA |
@@ -255,9 +259,10 @@ Goal: land each 🟢 item as a self-contained commit so it can be cherry-picked 
 
 1. **Themed branches, not bundle-as-PR.** Each plan bundle splits into focused themed branches at implementation time. Bundle A breaks into focused branches by failure mode, such as `build/signing-and-notarization`, `build/privacy-usage-strings`, `fix/cue-resource-validation`, and `perf/metal-frame-scheduling`. Bundle B items typically map 1:1 to a branch each. Bundle C items each get their own dedicated branch.
 2. **Commits within a branch.** Each commit is a single focused change with a focused message ("Fix dispatch_get_current_queue removed in macOS 10.9", not "Bundle A item 3"). 🔴 fork-specific items live on dedicated `macos26/*` branches, not mixed into the themed 🟢 branches.
-3. **Branch off `maddsV2`.** Every topic branch starts from the fork's `maddsV2` (which mirrors upstream). PR target is `macos26` (the personal working branch). This keeps each themed branch cleanly cherry-pickable for upstream later.
-4. **Upstream submission.** After a themed branch merges into `macos26`, evaluate whether to send it upstream. Create an `upstream/<topic>` branch from `maddsV2`, cherry-pick or recreate the relevant commits, and follow `AGENTS.md` for upstream AI-assistance disclosure and trailer handling before filing a PR to `MaddTheSane/Boxer:maddsV2`.
-5. **Priority order for upstream.** A23 🔒 (CUE resource path validation) is the **next branch to cut, ahead of remaining cleanup**: it is code-backed, isolated, user-impacting, and upstreamable. Land it on its own `fix/cue-resource-validation` branch and propose it upstream first and soon. Remaining cleanup and other 🟢 themed branches follow after.
+3. **Branch by destination.** Shared tooling/docs work starts from the fork's `maddsV2` and PRs back to `maddsV2`. Broad product work starts from `macos11` and PRs back to `macos11`. macOS 26-only work starts from `macos26` and PRs only to `macos26`.
+4. **Upstream submission.** After a themed branch merges into `macos11`, evaluate whether to send it upstream. Create an `upstream/<topic>` branch from `upstream/maddsV2`, cherry-pick or recreate the relevant commits, and follow `AGENTS.md` for upstream AI-assistance disclosure and trailer handling before filing a PR to `MaddTheSane/Boxer:maddsV2`.
+5. **Scaffolding sync.** Shared scaffolding/docs changes merge into `maddsV2`, then forward to `macos11`, then `macos26`. Run `tools/check-scaffolding-sync.sh origin/maddsV2 origin/macos11 origin/macos26` after the forward merges.
+6. **Priority order for upstream.** A23 🔒 (CUE resource path validation) is the **next upstream branch to keep staged**, ahead of remaining cleanup: it is code-backed, isolated, user-impacting, and upstreamable. The fork can keep A23 upstream-only until the developer chooses to merge it into `macos11`.
 
 ### Suggested themed branches for Bundle A
 
@@ -341,29 +346,30 @@ Set `BOXER_XCODE_PARALLEL=0` or pass `--no-parallel` to leave scheduling entirel
 to Xcode defaults. `tools/bench.sh --build` calls this wrapper and records the
 scheme, job count, and CMake policy value in the benchmark output.
 
-### Pre-merge integration check (disposable macos26 worktree)
+### Pre-merge integration check (disposable product worktree)
 
-Themed branches are `maddsV2`-derived and Phase-1-free by design, so they
-do not build standalone on a current Xcode, and a `bench.sh` run on them
-shows Phase-1 lineage artifacts, not real deltas. Do not treat
-"post-merge on `macos26`" as the first verification point: that discovers
-failures after the integration decision. Before opening or merging a
-themed PR:
+Product branches are verified in the line they target. Do not treat
+"post-merge on `macos11`" or "post-merge on `macos26`" as the first
+verification point: that discovers failures after the integration decision.
+Before opening or merging a themed PR:
 
-1. Create a disposable worktree from `macos26`.
+1. Create a disposable worktree from the target product branch (`macos11` for broad work, `macos26` for latest-macOS-only work).
 2. Merge the themed branch into it WITHOUT committing.
 3. Run `tools/bench.sh`, the relevant build, and any manual checks there.
-4. Record `BENCHMARKS.md` artifacts only from this `macos26` integration
+4. Record `BENCHMARKS.md` artifacts only from this integration
    result, never from the standalone themed branch.
 5. Discard the worktree.
 
 Use `tools/premerge-check.sh <topic-branch>` for the automated version of
 this workflow. The script uses a managed integration worktree, resets it to
-fresh `macos26`, syncs submodules before and after the trial merge, writes the
+the target product branch, syncs submodules before and after the trial merge, writes the
 bench snapshot to an artifact directory outside the topic branch, and runs
 `tools/build.sh` there. If the managed worktree is dirty from an interrupted
 run, inspect it or rerun with `--reset-managed`. Use `--deep-clean-shaders`
 when stale ignored OpenEmuShaders build products are suspected.
+
+`tools/premerge-check.sh` defaults to `macos11`. Pass `--base macos26` for
+macOS 26-only branches.
 
 Optionally keep a separate static `maddsV2` snapshot if upstream-only
 deltas matter: the current `BENCHMARKS.md` baseline is explicitly a

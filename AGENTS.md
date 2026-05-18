@@ -210,7 +210,7 @@ Use a conventional-commit prefix as the rightmost segment, with an optional name
 
 **Namespace prefixes (optional, prepended when destination matters):**
 
-- *(none)*: defaults to fork modernization. Merges into `macos26` (the personal working branch).
+- *(none)*: defaults to broad fork modernization. Merges into `macos11`.
 - `upstream/`: branch staged for a PR back to `MaddTheSane/Boxer:maddsV2`. Always cherry-picked from existing work, never the original work branch.
 - `macos26/`: work that requires macOS 26 and breaks compatibility for older systems. Never upstreamed. If a future macOS bump introduces another wave of narrowing changes, use `macos27/` etc. by the same pattern.
 
@@ -236,10 +236,44 @@ macos26/build/drop-intel-arch              (fork-only narrowing)
 
 **Long-lived branches in this fork:**
 
-- `maddsV2`: clean mirror of `MaddTheSane/Boxer:maddsV2`. Never commit to it directly. Update only by fetching from upstream.
-- `macos26`: the personal working branch. All merged PRs land here. This is the branch the developer builds and runs.
+- `upstream/maddsV2`: clean mirror of `MaddTheSane/Boxer:maddsV2`. Never commit to it directly. Update only by fetching from upstream.
+- `maddsV2`: fork baseline. It is upstream plus local project scaffolding only: AGENTS, plan docs, hooks, and build/benchmark tooling. Do not put product behavior changes here.
+- `macos11`: broad fork product branch with macOS 11 as the minimum target. Upstream-friendly and fork-general product changes land here first.
+- `macos26`: latest-macOS product branch. It is downstream of `macos11` and carries macOS 26 or Apple Silicon-only narrowing.
 
-Always branch new work off `maddsV2`, not `macos26`. This keeps each topic branch cleanly cherry-pickable for upstream (`maddsV2` in the fork shares the same base as upstream's `maddsV2`, so no merge conflicts during cherry-pick).
+Branch shared tooling/docs work from `maddsV2` and merge it back to `maddsV2`, then merge forward into `macos11` and `macos26`.
+
+Branch broad product work from `macos11` and merge it back to `macos11`, then merge forward into `macos26`.
+
+Branch macOS 26-only work from `macos26` and merge it only into `macos26`.
+
+For upstream submission, create an `upstream/<topic>` branch from `upstream/maddsV2` and cherry-pick or recreate the relevant commits there.
+
+### Scaffolding and docs sync
+
+The canonical home for shared scaffolding is `maddsV2`. This includes:
+
+- `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
+- `.gitignore`
+- `BENCHMARKS.md`
+- `docs/modernization-plan.md`, `docs/upstream-proposals.md`
+- `tools/bench.sh`, `tools/build.sh`, `tools/premerge-check.sh`
+- `tools/check-scaffolding-sync.sh`
+- `tools/git-hooks/*`, `tools/setup-git-hooks.sh`
+
+When changing any of those files, use a dedicated tooling/docs branch from `maddsV2`, merge it into `maddsV2`, then immediately merge forward:
+
+```text
+maddsV2 -> macos11 -> macos26
+```
+
+After the forward merges, run:
+
+```bash
+tools/check-scaffolding-sync.sh origin/maddsV2 origin/macos11 origin/macos26
+```
+
+Do not make one-off scaffolding/doc edits directly on `macos11` or `macos26` unless the file is intentionally product-branch-specific and the PR explains why.
 
 ## PR conventions
 
@@ -256,7 +290,8 @@ Bundle C: dedicated branch and PR per item.
 
 **Target base branch:**
 
-- Standard topic branches: PR into `macos26` (the personal working branch).
+- Standard product topic branches: PR into `macos11`.
+- Shared tooling/docs branches: PR into `maddsV2`, then merge forward.
 - `upstream/*` branches: PR into `MaddTheSane/Boxer:maddsV2`.
 - `macos26/*` branches: still PR into `macos26` locally; never opened against upstream.
 
@@ -303,13 +338,13 @@ Before and after each PR, run:
 
 Edit `BENCHMARKS.md`'s snapshot index at the top to add the new dated row. The static markers in the snapshot, including deprecated API counts, TCC plist coverage, and build settings, should move in the expected direction. If a marker moved unexpectedly, investigate before merging.
 
-Before opening or merging a `maddsV2`-derived topic branch into `macos26`, prefer:
+Before opening or merging a product topic branch into `macos11`, prefer:
 
 ```bash
 tools/premerge-check.sh <topic-branch>
 ```
 
-This runs the bench snapshot and requested build in a managed `macos26` integration worktree. Keep generated benchmark artifacts in the integration context, not on upstreamable topic branches.
+This runs the bench snapshot and requested build in a managed integration worktree. Keep generated benchmark artifacts in the integration context, not on upstreamable topic branches.
 
 The `@available(macOS <26)` count is expected to remain nonzero unless the active plan item explicitly changes it. Do not treat a nonzero `@available` count as a failure.
 
