@@ -38,7 +38,7 @@ Items below are tagged 🟢 (upstreamable) or 🔴 (fork-specific narrowing) so 
 | 1 | `OSSpinLock` → `os_unfair_lock` in [RegexKitLite.m](Other%20Sources/RegexKitLite/RegexKitLite.m) | ✅ Done |
 | 2 | `NSAutoreleasePool` → `objc_autoreleasePoolPush/Pop` in [BXEmulator.mm](Boxer/BXEmulator.mm) | ✅ Done |
 | 3 | `WebView` → `WKWebView` migration in [BXStandaloneAboutController](Standalone/BXStandaloneAboutController.m) + [XIB](Standalone/Resources/Base.lproj/StandaloneAbout.xib) | ✅ Done |
-| 4 | `AUGraph` + `DLSSynth` → `AVAudioEngine` + Apple `MIDISynth` via `AVAudioUnitMIDIInstrument` in [BXMIDISynth.m](Boxer/BXMIDISynth.m) | ✅ Done |
+| 4 | `AUGraph` + `DLSSynth` → `AVAudioEngine` + `AVAudioUnitSampler` in [BXMIDISynth.m](Boxer/BXMIDISynth.m) | ✅ Done |
 | 5 | Unused `RegexKitLite` imports removed from 3 files | ✅ Done |
 | 6 | Deployment target split: `11.0` on `macos11`, `26.0` on `macos26` (both Debug + Release) | ✅ Done |
 | 7 | [Boxer.entitlements](Boxer/Boxer.entitlements) populated (JIT + library-validation) | ✅ Done |
