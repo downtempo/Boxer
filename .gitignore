@@ -37,6 +37,10 @@ swiftpm/
 .vscode/
 .aider*
 
+#Local git worktrees
+.worktrees/
+worktrees/
+
 #Editor scratch files
 *.swp
 *~
