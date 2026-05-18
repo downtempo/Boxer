@@ -3754,7 +3754,6 @@
 			);
 			buildRules = (
 			);
-			comments = "REGARDING --mstackrealign\nBoxer will crash with a dyld_misaligned_stack_error if dynamic core mode is on when the session starts.\n\ndyld is the dynamic linker, so this may be some peculiar interaction of threading and dynamically-loaded frameworks: the crash also happens in our non-XCode, SDL-framework-using build, and it *doesn't* happen if a sleep() delay is introduced before DOSBox_main is called, which implies a race condition.\n\nAdding -mstackrealign to the C flags for Intel seems to have made the problem go away. Which doesn't explain why it's happening in the first place.";
 			dependencies = (
 				55EB73EA27ED72CA00D5F7E0 /* PBXTargetDependency */,
 				55D431F625044D50008515E1 /* PBXTargetDependency */,
@@ -3782,7 +3781,6 @@
 			);
 			buildRules = (
 			);
-			comments = "REGARDING --mstackrealign\nBoxer will crash with a dyld_misaligned_stack_error if dynamic core mode is on when the session starts.\n\ndyld is the dynamic linker, so this may be some peculiar interaction of threading and dynamically-loaded frameworks: the crash also happens in our non-XCode, SDL-framework-using build, and it *doesn't* happen if a sleep() delay is introduced before DOSBox_main is called, which implies a race condition.\n\nAdding -mstackrealign to the C flags for Intel seems to have made the problem go away. Which doesn't explain why it's happening in the first place.";
 			dependencies = (
 				55D431F825044D56008515E1 /* PBXTargetDependency */,
 				55E6A0C51C00C88A00285593 /* PBXTargetDependency */,
@@ -5165,12 +5163,9 @@
 					"\"$(SRCROOT)/Vendor/OpenEmuShaders/Source/RendererPrivate\"",
 				);
 				INFOPLIST_FILE = "Standalone/Boxer Standalone-Info.plist";
-				LD_NO_PIE = YES;
-				"LD_NO_PIE[arch=arm64]" = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = "2.0.0-alpha";
-				OTHER_CFLAGS = "-mstackrealign";
 				PRODUCT_BUNDLE_IDENTIFIER = "net.washboardabs.boxer-standalone";
 				PRODUCT_NAME = "Boxer Standalone";
 				PROVISIONING_PROFILE = "";
@@ -5211,12 +5206,9 @@
 					"\"$(SRCROOT)/Vendor/OpenEmuShaders/Source/RendererPrivate\"",
 				);
 				INFOPLIST_FILE = "Standalone/Boxer Standalone-Info.plist";
-				LD_NO_PIE = YES;
-				"LD_NO_PIE[arch=arm64]" = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = "2.0.0-alpha";
-				OTHER_CFLAGS = "-mstackrealign";
 				PRODUCT_BUNDLE_IDENTIFIER = "net.washboardabs.boxer-standalone";
 				PRODUCT_NAME = "Boxer Standalone";
 				PROVISIONING_PROFILE = "";
@@ -5298,6 +5290,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -5379,13 +5372,10 @@
 					"\"$(SRCROOT)/Vendor/OpenEmuShaders/Source/RendererPrivate\"",
 				);
 				INFOPLIST_FILE = Info.plist;
-				LD_NO_PIE = YES;
-				"LD_NO_PIE[arch=arm64]" = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = "2.0.0-alpha";
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
-				OTHER_CFLAGS = "-mstackrealign";
 				PRODUCT_BUNDLE_IDENTIFIER = net.washboardabs.boxer;
 				PRODUCT_NAME = Boxer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -5428,13 +5418,10 @@
 					"\"$(SRCROOT)/Vendor/OpenEmuShaders/Source/RendererPrivate\"",
 				);
 				INFOPLIST_FILE = Info.plist;
-				LD_NO_PIE = YES;
-				"LD_NO_PIE[arch=arm64]" = NO;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = "2.0.0-alpha";
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
-				OTHER_CFLAGS = "-mstackrealign";
 				PRODUCT_BUNDLE_IDENTIFIER = net.washboardabs.boxer;
 				PRODUCT_NAME = Boxer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -5448,6 +5435,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
