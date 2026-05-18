@@ -163,12 +163,24 @@
 	<string>http://www.mobygames.com/</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Boxer needs access to your Desktop so it can open, import, and save DOS gameboxes stored there.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Boxer needs access to your Documents folder so it can open, import, and save DOS gameboxes stored there.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Boxer needs access to your Downloads folder so it can open and import downloaded DOS games and gameboxes.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2016 Alun Bestor. Released under the GNU Public License 2.0.</string>
+	<key>NSInputMonitoringUsageDescription</key>
+	<string>Boxer needs Input Monitoring permission to detect game controllers through macOS HID input.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>Boxer needs access to network volumes so it can open, import, and mount DOS games stored on file servers or NAS shares.</string>
 	<key>NSPrincipalClass</key>
 	<string>BXApplication</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>Boxer needs access to removable volumes so it can import and mount DOS games from CDs, DVDs, USB drives, and other external media.</string>
 	<key>OSAScriptingDefinition</key>
 	<string>Boxer.sdef</string>
 	<key>ReplacementDocsSearchURL</key>
