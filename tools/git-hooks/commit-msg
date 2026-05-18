@@ -1,11 +1,12 @@
 #!/bin/bash
-# commit-msg hook: enforce the project's AI-attribution conventions.
+# commit-msg hook: enforce the project's commit-message conventions.
 #
-# Rules (see AGENTS.md > Attribution):
+# Rules (see AGENTS.md > Commit conventions):
 #   - Reject Co-Authored-By trailers naming an AI agent.
 #   - Reject "Generated with ..." boilerplate footers.
 #   - Reject "Claude:", "Codex:", "ChatGPT:" subject-line prefixes.
 #   - If an Assisted-by: trailer is present, validate its format.
+#   - Reject U+2014 em-dashes anywhere in the message.
 #
 # Install: ./tools/setup-git-hooks.sh
 #
@@ -61,6 +62,19 @@ while IFS= read -r line ; do
   fi
 done <<< "$msg"
 
+# 5. Reject U+2014 em-dashes (AGENTS.md: use commas, colons, periods, or
+# parentheses instead). Scan only the human-authored message: drop git's
+# verbose-diff scissors region and comment lines so an em-dash in a `-v`
+# diff or in git's help text can't trip the check. Match the raw UTF-8
+# bytes (E2 80 94) under LC_ALL=C: portable to macOS bash 3.2 / BSD grep,
+# which lack \uXXXX escapes and grep -P.
+scan="$(printf '%s\n' "$msg" | sed '/^#.*>8/,$d' | grep -v '^#')"
+emdash=$'\xe2\x80\x94'
+if printf '%s' "$scan" | LC_ALL=C grep -qF "$emdash" ; then
+  errors+=("Em-dash (U+2014) found in the commit message.")
+  errors+=("    Use a comma, colon, period, or parentheses instead.")
+fi
+
 if [[ ${#errors[@]} -gt 0 ]] ; then
   {
     echo
@@ -70,7 +84,7 @@ if [[ ${#errors[@]} -gt 0 ]] ; then
       echo "  $err"
     done
     echo
-    echo "See AGENTS.md > Commit conventions > Attribution for the full rules."
+    echo "See AGENTS.md > Commit conventions for the full rules."
     echo "To bypass (rarely justified): git commit --no-verify"
     echo
   } >&2
