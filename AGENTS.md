@@ -255,11 +255,12 @@ The canonical home for shared scaffolding is `maddsV2`. This includes:
 
 - `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - `.gitignore`
-- `BENCHMARKS.md`
 - `docs/modernization-plan.md`, `docs/upstream-proposals.md`
 - `tools/bench.sh`, `tools/build.sh`, `tools/premerge-check.sh`
 - `tools/check-scaffolding-sync.sh`
 - `tools/git-hooks/*`, `tools/setup-git-hooks.sh`
+
+`BENCHMARKS.md` is intentionally product-branch-specific once runtime/product work starts. Keep benchmark snapshots on the branch or integration context where they were captured; do not force benchmark history to match `maddsV2`.
 
 When changing any of those files, use a dedicated tooling/docs branch from `maddsV2`, merge it into `maddsV2`, then immediately merge forward:
 
