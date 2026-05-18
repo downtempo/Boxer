@@ -83,7 +83,7 @@ Bundle A is a planning bundle, not a PR boundary. Split it into the themed branc
 | **A9** 🟢 | **Apply populated entitlements to Standalone target too**: wire `Boxer/Boxer.entitlements` into the Boxer Standalone target's build config so bundled gameboxes get JIT permissions. Same lineage caveat as A8: Standalone must not be hardened against an empty entitlements file. | [project.pbxproj](Boxer.xcodeproj/project.pbxproj), possibly [Boxer.entitlements](Boxer/Boxer.entitlements) depending on branch base | Small |
 | **A10** 🟢 | **Add TCC usage descriptions to app Info.plists** - ✅ **done** on `build/privacy-usage-strings`. Tahoe will prompt for these on first access; without custom text the user sees ugly defaults. Added `NSRemovableVolumesUsageDescription` (for CD/USB game discs), `NSNetworkVolumesUsageDescription` (for NAS/network shares), `NSDesktopFolderUsageDescription`, `NSDocumentsFolderUsageDescription`, `NSDownloadsFolderUsageDescription` (common gamebox locations) to both Boxer and Boxer Standalone. | [Info.plist](Info.plist), [Standalone/Boxer Standalone-Info.plist](Standalone/Boxer%20Standalone-Info.plist) | Small |
 | **A11** 🟢 | **Add `NSInputMonitoringUsageDescription` to app Info.plists** - ✅ **done** on `build/privacy-usage-strings`. Required by macOS 10.15+ for the `IOHIDManager` calls in [ADBHIDMonitor.m:124,155](Other%20Sources/ADBToolkit/ADBHIDMonitor.m). Without it the gamepad enumeration triggers a generic-text prompt; user still has to enable Boxer in Settings → Privacy → Input Monitoring before joysticks work. Applied to both Boxer and Boxer Standalone because bundled gameboxes run through the Standalone app. | [Info.plist](Info.plist), [Standalone/Boxer Standalone-Info.plist](Standalone/Boxer%20Standalone-Info.plist) | Small |
-| **A12** 🔴 | **Drop Intel: set `ARCHS = arm64` + slim SDL frameworks**: Boxer's first-party code is expected to build arm64-only; architecture-specific CPU-core paths are already gated (`C_DYNAMIC_X86` / `C_DYNREC`), so verify the arm64 dynrec path in the integration build rather than treating this as a pure mechanical setting. SDL2 + SDL2_net frameworks ship as universal; slim with `lipo -extract arm64 Frameworks/SDL2.framework/Versions/A/SDL2 -o ...` (same for SDL2_net). Tahoe already excludes most Intel Macs; net effect: ~7MB smaller distribution, simpler signing. **Fork-specific narrowing, not for upstream.** | [project.pbxproj](Boxer.xcodeproj/project.pbxproj), [Frameworks/SDL2.framework](Frameworks/SDL2.framework), [Frameworks/SDL2_net.framework](Frameworks/SDL2_net.framework) | Fork-specific small |
+| **A12** 🔴 | **Drop Intel: set `ARCHS = arm64` + slim shipped binaries** - ✅ **done** on `build/drop-intel-arch-macos26`. This is a macOS 26-only Apple Silicon narrowing and does not apply to `macos11`. Set project-level `ARCHS = arm64`, removed Intel-only linker/stack-realignment settings, marked Boxer and Standalone as requiring native execution, and slimmed SDL2, SDL2_net, cdrdao, and toc2cue to thin arm64 Mach-O binaries. Verified Boxer and Standalone Release builds; both app executables remain PIE arm64. **Fork-specific narrowing, not for upstream.** | [project.pbxproj](Boxer.xcodeproj/project.pbxproj), [Info.plist](Info.plist), [Standalone/Boxer Standalone-Info.plist](Standalone/Boxer%20Standalone-Info.plist), [Frameworks/SDL2.framework](Frameworks/SDL2.framework), [Frameworks/SDL2_net.framework](Frameworks/SDL2_net.framework), `Resources/cdrdao`, `Resources/toc2cue` | Fork-specific small |
 | **A13** 🟢 | **Enable Hardened Runtime for Boxer Standalone target**: same `ENABLE_HARDENED_RUNTIME = NO` → `YES` flip as A8. Without it, standalone game apps stamped out by Bundler won't notarize. Same lineage caveat as A8/A9: hardening and populated entitlements must be verified together. | [project.pbxproj](Boxer.xcodeproj/project.pbxproj), possibly [Boxer.entitlements](Boxer/Boxer.entitlements) depending on branch base | Small |
 | **A14** 🟢 | **Share Boxer + Standalone schemes in workspace**: `Boxer.xcworkspace/xcshareddata/xcschemes/` currently only contains `Boxer CI.xcscheme` and `Boxer Bundler CI.xcscheme`. Add `Boxer.xcscheme` and `Boxer Standalone.xcscheme` (mirror the CI ones with `parallelizeBuildables = YES` etc.) so contributors see them in the scheme picker by default. | new scheme files | Small |
 | **A15** 🟢 | **Delete the legacy `.pch` prefix header in Bundler.** `Bundler/Boxer Bundler-Prefix.pch` contains only `#import <Cocoa/Cocoa.h>`. Drop `GCC_PRECOMPILE_PREFIX_HEADER` and `GCC_PREFIX_HEADER` from the Bundler build config ([project.pbxproj lines 5242, 5280](Boxer.xcodeproj/project.pbxproj:5242)), delete the file, verify a clean build. The PCH was introduced alongside the Bundler merge in [`839dfd57`](https://github.com/MaddTheSane/Boxer/commit/839dfd57) (Alun Bestor, 2012-11-02), back when prefix headers were the Xcode default. Modern Xcode prefers per-file imports. | [project.pbxproj](Boxer.xcodeproj/project.pbxproj), delete `Bundler/Boxer Bundler-Prefix.pch` | Small |
@@ -112,7 +112,7 @@ Bundle A is a planning bundle, not a PR boundary. Split it into the themed branc
 | A10, A11 | Done | landed on `build/privacy-usage-strings`, post-branch snapshot appended to `BENCHMARKS.md` |
 | A23 🔒 | Staged upstream-only | keep on `upstream/fix/cue-resource-validation` until the developer chooses to merge it into `macos11` |
 | A5 | Defer | shader-submodule bump deferred to Bundle C |
-| A12 🔴 | Ready | fork-only ARCHS + lipo, scoped |
+| A12 🔴 | Done | macOS 26-only Apple Silicon narrowing landed on `build/drop-intel-arch-macos26` |
 | A17 | Investigate | frame pacing needs DOS-mode-to-refresh wiring + runtime QA |
 | A21 | Investigate | redraw-skip is a renderer-architecture change |
 | A18 | Experiment | color-space choice is a visual judgement; screenshot QA |
@@ -280,7 +280,7 @@ Consolidated for solo-dev workflow, but split by failure mode where review risk 
 | `investigate/audio-latency` | A19 | AVAudioEngine I/O buffer size; correct macOS mechanism unverified. Investigation branch. |
 | `fix/cue-resource-validation` | A23 🔒 | Security item kept on its own branch for upstream-priority focus. |
 | `fix/bundler-pasteboard-secure-decoding` | A26 🔒 | Complete. Security item kept on its own branch for upstream-friendly isolation. |
-| `macos26/drop-intel-arch` | A12 🔴 | Fork-only narrowing; segregated from upstream-bound work. |
+| `build/drop-intel-arch-macos26` | A12 🔴 | macOS 26-only Apple Silicon narrowing; segregated from `macos11` and upstream-bound work. |
 
 A5 (OpenEmu-Shaders bump) is **deferred to Bundle C**. Empirical research showed the 117-commit jump from `0f9e7e3` → `2ac33a9` removes Obj-C interop on `OEFilterChain`/`OEShaderParameter`/etc., requiring a multi-day rewrite of Boxer's shader integration (8 files, ~1000 LoC affected). Not a small SHA bump. See Bundle C considerations.
 
@@ -320,9 +320,10 @@ Expected deltas after the relevant Bundle A themed branches:
 - `dispatch_get_current_queue` markers: → 0.
 - `[NSImage setSize:]`: unchanged if tracked; it is not actually deprecated and is explicitly skipped.
 - Tahoe TCC rows: now present in both app plists after the privacy usage strings branch. `LSSupportsGameMode` remains absent unless the later Game Mode experiment proves it improves the user experience.
-- `ARCHS`: (unset) → arm64 only on the fork-specific A12 branch.
+- `ARCHS`: (unset) → arm64 only on the fork-specific macOS 26 A12 branch. Do not apply this to `macos11`.
 - `ENABLE_HARDENED_RUNTIME`: mixed → YES after the hardening branch.
-- SDL2 / SDL2_net frameworks: universal → arm64 only on the fork-specific A12 branch (~7 MB saved).
+- SDL2 / SDL2_net frameworks and copied CD helper tools: universal → thin arm64 on the fork-specific macOS 26 A12 branch.
+- `LSRequiresNativeExecution`: absent → present in Boxer and Standalone on the fork-specific macOS 26 A12 branch.
 
 ### Track 1b: build wrapper
 
