@@ -183,13 +183,11 @@ typedef NS_ERROR_ENUM(BXDOSBoxMountErrorDomain, BXDOSBoxMountErrors) {
 - (BOOL) _runLoopShouldContinue;
 
 /// Called at the start of each iteration of DOSBox's run loop.
-/// @param contextInfo[out]  Populated with a retained reference to the @c NSAutoreleasePool
-/// for the current iteration of the run loop.
+/// @param contextInfo[out]  Populated with an autorelease pool token for the current run loop iteration.
 - (void) _runLoopWillStartWithContextInfo: (out void *_Nullable*_Nullable)contextInfo;
 
 /// Called at the end of each iteration of DOSBox's run loop.
-/// @param contextInfo  The contextInfo that was provided by @c _runLoopWillStartWithContextInfo:
-///                     (in practice, the @c NSAutoreleasePool for the current iteration of the run loop.)
+/// @param contextInfo  The autorelease pool token provided by @c _runLoopWillStartWithContextInfo:
 - (void) _runLoopDidFinishWithContextInfo: (void *_Nullable)contextInfo;
 
 /// Convenience method for sending a notification to both the default notification center and to a selector

@@ -1190,7 +1190,7 @@
 		55DB14FD27EDA2C70024AE9E /* program_loadrom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = program_loadrom.h; sourceTree = "<group>"; };
 		55DB151427EDA2FE0024AE9E /* rgb24.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rgb24.h; sourceTree = "<group>"; };
 		55DB152B27EDA4B10024AE9E /* loguru.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = loguru.hpp; sourceTree = "<group>"; };
-		55DB152F27EDA4B10024AE9E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		55DB152F27EDA4B10024AE9E /* Readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
 		55DB153727EDA4B10024AE9E /* loguru.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = loguru.cpp; sourceTree = "<group>"; };
 		55DB157627EDA6000024AE9E /* dyn_cache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dyn_cache.h; sourceTree = "<group>"; };
 		55DEBB1A201E81C200F1092F /* midi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = midi.h; sourceTree = "<group>"; };
@@ -2329,7 +2329,7 @@
 			children = (
 				55DB153727EDA4B10024AE9E /* loguru.cpp */,
 				55DB152B27EDA4B10024AE9E /* loguru.hpp */,
-				55DB152F27EDA4B10024AE9E /* README.md */,
+				55DB152F27EDA4B10024AE9E /* Readme.md */,
 			);
 			path = loguru;
 			sourceTree = "<group>";
@@ -5336,7 +5336,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14.4;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -5484,7 +5484,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14.4;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;

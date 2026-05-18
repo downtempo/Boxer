@@ -7,15 +7,16 @@
 
 
 #import <Cocoa/Cocoa.h>
-#import <WebKit/WebKit.h>
+#import <WebKit/WKWebView.h>
+#import <WebKit/WKNavigationDelegate.h>
 #import "BXDOSWindowBackgroundView.h"
 #import "BXThemedLabel.h"
 #import "BXThemes.h"
 
 /// BXStandaloneAboutController styles and configures an about window suitable for standalone game apps.
-@interface BXStandaloneAboutController : NSWindowController
+@interface BXStandaloneAboutController : NSWindowController <WKNavigationDelegate>
 {
-    WebView *_creditsView;
+    WKWebView *_creditsView;
     NSTextField *_appNameField;
     NSButton *_websiteButton;
     NSButton *_acknowledgementsButton;
@@ -26,7 +27,7 @@
 @property (readonly, nonatomic) NSString *shortVersionString;
 @property (readonly, nonatomic) NSString *buildNumber;
 
-@property (assign, nonatomic) IBOutlet WebView *creditsView;
+@property (weak, nonatomic) IBOutlet WKWebView *creditsView;
 @property (assign, nonatomic) IBOutlet NSTextField *appNameField;
 
 @property (assign, nonatomic) IBOutlet NSButton *websiteButton;

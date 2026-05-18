@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict/>
+<dict>
+	<!-- Required for DOSBox's JIT recompiler to write executable memory -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<!-- Required for DOSBox to write to executable memory pages -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<!-- Required for vendored frameworks (SDL2, DDHidLib, MT32Emu) that are not notarized by Apple -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
 </plist>
