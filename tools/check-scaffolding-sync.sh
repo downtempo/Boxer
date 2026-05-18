@@ -35,7 +35,6 @@ fi
 FILES=(
   .gitignore
   AGENTS.md
-  BENCHMARKS.md
   CLAUDE.md
   GEMINI.md
   docs/modernization-plan.md
