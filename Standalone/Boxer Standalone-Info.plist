@@ -67,6 +67,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
+	<key>LSRequiresNativeExecution</key>
+	<true/>
 	<key>NSDesktopFolderUsageDescription</key>
 	<string>Boxer needs access to your Desktop to open saved games and game files stored there.</string>
 	<key>NSDocumentsFolderUsageDescription</key>

@@ -157,6 +157,8 @@
 	<string>http://boxerapp.com/donate</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
+	<key>LSRequiresNativeExecution</key>
+	<true/>
 	<key>MobygamesSearchURL</key>
 	<string>http://www.mobygames.com/search/quick?p=2&amp;q=%@</string>
 	<key>MobygamesURL</key>
