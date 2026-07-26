@@ -20,18 +20,21 @@ msg_file="$1"
 msg="$(cat "$msg_file")"
 errors=()
 
-# AI vendors whose Co-authored-by trailers are forbidden.
-ai_authors_re='(claude|chatgpt|codex|copilot|aider|cursor|openai|anthropic|github copilot|gemini)'
-ai_emails_re='@(anthropic\.com|openai\.com|aider\.chat|noreply\.github\.com.*copilot|cursor\.sh)'
-
-# 1. Forbidden Co-authored-by trailers (AI agents).
+# 1. Co-authored-by trailers.
+#
+# Match the trailer shape, not a list of vendor names. This check previously
+# enumerated ten vendors, so trailers naming GPT-5, Llama, or any other
+# unlisted model passed while Claude and Gemini were blocked. A name list is
+# always one model behind. The trailer is reserved for human collaborators
+# (AGENTS.md > Commit conventions), so a genuine human coauthor sets
+# ALLOW_COAUTHOR=1.
 while IFS= read -r line ; do
-  if [[ "$line" =~ ^[Cc]o-[Aa]uthored-[Bb]y: ]] ; then
-    lower="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$lower" =~ $ai_authors_re ]] || [[ "$lower" =~ $ai_emails_re ]] ; then
-      errors+=("Forbidden AI Co-authored-by trailer:")
+  if [[ "$line" =~ ^[[:space:]]*[Cc]o[-_\ ]?[Aa]uthored[-_\ ]?[Bb]y: ]] ; then
+    if [[ "${ALLOW_COAUTHOR:-0}" != "1" ]] ; then
+      errors+=("Co-authored-by is reserved for human collaborators:")
       errors+=("    $line")
-      errors+=("    Use 'Assisted-by: <agent> (<model>)' instead.")
+      errors+=("    Use 'Assisted-by: <agent> (<model>)' for AI assistance, or")
+      errors+=("    ALLOW_COAUTHOR=1 git commit ... for a genuine human coauthor.")
     fi
   fi
 done <<< "$msg"
