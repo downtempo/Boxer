@@ -241,6 +241,8 @@ macos26/build/drop-intel-arch              (fork-only narrowing)
 - `macos11`: broad fork product branch with macOS 11 as the minimum target. Upstream-friendly and fork-general product changes land here first.
 - `macos26`: latest-macOS product branch. It is downstream of `macos11` and carries macOS 26 or Apple Silicon-only narrowing.
 
+`macos11` and `macos26` are long-lived infrastructure branches and are excluded from branch cleanup; never delete either as stale.
+
 Branch shared tooling/docs work from `maddsV2` and merge it back to `maddsV2`, then merge forward into `macos11` and `macos26`.
 
 Branch broad product work from `macos11` and merge it back to `macos11`, then merge forward into `macos26`.
