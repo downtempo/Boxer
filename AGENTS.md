@@ -16,6 +16,8 @@ If that file is missing in this checkout, stop and ask the developer for the act
 
 Always ask the developer if scope is unclear. Do not improvise additional changes outside the assigned plan item.
 
+The current privacy state, including what leaves the device and the privacy decision log, lives in `docs/privacy-status.md`. Read it before changing anything that sends data off the device or brings up a permission prompt, and record any privacy change there as part of the same plan item.
+
 ## Session start: verify git hooks are active
 
 Run before the first commit (one-time per clone/worktree — `core.hooksPath` is local config, not committed):
