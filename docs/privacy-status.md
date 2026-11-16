@@ -24,23 +24,34 @@ differ: see [Other branches](#other-branches).
 
 | Destination | Transport | What is sent | When | On by default | In policy | In label |
 | --- | --- | --- | --- | --- | --- | --- |
-| `updates.boxerapp.com/appcast-dev` (Sparkle update feed; Sparkle resolved through SwiftPM from 1.23.0 up to the next major version) | HTTPS | An update-check request; system profiling is off (`SUEnableSystemProfiling` false). When an update exists, Sparkle also fetches the release notes and the update archive from URLs in the feed | Automatically, once a day (`SUScheduledCheckInterval` 86400), or from Check for Updates in the Boxer menu | Yes (`SUEnableAutomaticChecks` true) | No policy | Not recorded |
+| `updates.boxerapp.com/appcast-dev` (Sparkle update feed; Sparkle resolved through SwiftPM from 1.23.0 up to the next major version) | HTTPS | An update-check request; system profiling is off (`SUEnableSystemProfiling` false). When an update exists, Sparkle shows its update window, which can load release notes linked from the feed. It downloads the update archive when the user chooses to install; the repository sets no automatic-install key | Automatically, once a day (`SUScheduledCheckInterval` 86400), or from Check for Updates in the Boxer menu | Yes (`SUEnableAutomaticChecks` true) | No policy | Not recorded |
 | `boxerapp.com/report-an-issue`, opened in the browser | HTTP | After an emulation error, if the user chooses to report it: the error message, the full stack trace, the gamebox name, the gamebox file path (which usually contains the user's account name) and the running DOS programs with their arguments, all in the URL query (`Boxer/Application Delegate/BXBaseAppController.m`). The server receives them when the page loads, before the user submits anything. From Report a Bug in the Boxer menu, the page opens with no details | User action | User action | No policy | Not recorded |
 | Yahoo image search | HTTP | "dos" plus the game's name plus "cover" | From the import-finished panel and the gamebox inspector | User action | No policy | Not recorded |
 | MobyGames and ReplacementDocs searches | HTTP | The gamebox name | From the Help menu | User action | No policy | Not recorded |
 | `boxerapp.com` home and donation pages | HTTP | A plain page request | From Donate to Boxer in the Boxer menu, Boxer Website in the Help menu, and the About window | User action | No policy | Not recorded |
 | The user's mail app | Mail | A new message to the support address in `Info.plist`, with a subject that includes the app version and build number | From Send Feedback in the Boxer menu | User action | No policy | Not recorded |
-| Network peers through DOSBox IPX or serial emulation | UDP and TCP | Whatever the DOS game sends over the emulated network or serial link | See below | No | No policy | Not recorded |
+| Network peers through DOSBox IPX, modem, null-modem or NE2000 emulation | UDP and TCP, or raw Ethernet frames for NE2000 | Whatever the DOS guest sends over the emulated network or serial link | See below | No | No policy | Not recorded |
 
 Who operates the `boxerapp.com` hosts has not been verified for this fork. The update
 check runs without any user action, so it reveals the user's IP address and app
 version to that host every day.
 
-The DOSBox core at the recorded submodule commit `0ae2d171` compiles in modem, IPX
-and direct serial support (`C_MODEM`, `C_IPX` and `C_DIRECTSERIAL` in its
-`config.h`). Boxer's `Resources/Configurations/Preflight.conf` turns IPX off and sets
-the serial ports to dummy or disabled. Three DOS commands that ship with Boxer turn
-networking on when the user runs them (`Resources/DOS Toolkit/UTILS/`):
+The DOSBox core at the recorded submodule commit `0ae2d171` compiles in four
+networking features, and its `config.h` sets no other networking flags:
+
+- IPX (`C_IPX`): off in the core's defaults and in Boxer's
+  `Resources/Configurations/Preflight.conf`.
+- Modem and null-modem serial connections over TCP (`C_MODEM`), and direct serial to
+  a host serial device (`C_DIRECTSERIAL`): `Preflight.conf` sets the serial ports to
+  dummy or disabled.
+- NE2000 Ethernet passthrough (`C_NE2000`): on in the core's defaults, and Boxer
+  does not configure it. The default `realnic=list` only lists the Mac's network
+  interfaces and opens none. A `realnic` setting that names an interface opens it
+  through libpcap in promiscuous mode, which puts the DOS guest on the real
+  network. Whether macOS permissions allow that capture was not verified.
+
+Three DOS commands that ship with Boxer turn networking on when the user runs them
+(`Resources/DOS Toolkit/UTILS/`):
 
 - `HOST` turns IPX on, starts an IPX server on port 2130 and listens for a null-modem
   serial connection on port 2131, unless the user gives other ports.
@@ -48,9 +59,10 @@ networking on when the user runs them (`Resources/DOS Toolkit/UTILS/`):
   address the user enters.
 - `NETWORK` is a menu for the two.
 
-A user or gamebox configuration can also turn these on. macOS may ask whether to
-accept incoming connections when a listener starts. This networking has not been
-fully reviewed.
+A user or gamebox configuration can also turn any of these on. macOS may ask whether
+to accept incoming connections when a listener starts. The core was checked through
+its build flags, its default settings and Boxer's configuration, not by a full
+source review.
 
 Boxer Standalone, the app that runs bundled gameboxes, has no update feed, no
 report URL and no search URLs in its `Info.plist`. On user action it opens the
@@ -69,7 +81,8 @@ link clicks to the browser.
 
 ## Privacy Rule Documents
 
-None for product behavior. `AGENTS.md` has rules for repository content only.
+None for product behavior. `AGENTS.md` covers the pre-commit leak check and the
+rules for security and runtime-behavior items.
 
 ## Privacy Decisions
 
@@ -98,5 +111,5 @@ it is made.
   Sparkle 2 migration is plan item C1 in `docs/modernization-plan.md`.
 - The issue report sends local file paths and program details in a plain-HTTP URL
   when the page opens. Whether to change that is the owner's choice.
-- Review the emulator's modem, IPX and serial networking, including the `HOST` and
-  `JOIN` commands, before any public release.
+- Review the emulator's IPX, modem, serial and NE2000 networking, including the
+  `HOST` and `JOIN` commands, before any public release.
