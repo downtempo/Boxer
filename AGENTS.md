@@ -16,7 +16,7 @@ If that file is missing in this checkout, stop and ask the developer for the act
 
 Always ask the developer if scope is unclear. Do not improvise additional changes outside the assigned plan item.
 
-The current privacy state, including what leaves the device and the privacy decision log, lives in `docs/privacy-status.md`.
+The current privacy state, including what leaves the device and the privacy decision log, lives in `docs/privacy-status.md`. Read it before changing anything that sends data off the device or brings up a permission prompt, and record any privacy change there.
 
 ## Session start: verify git hooks are active
 
