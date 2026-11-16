@@ -82,8 +82,8 @@ the user turns on Remote Apple Events.
 
 The 2026-11-15 audit searched the app's own Objective-C and Swift sources and the
 `Vendor/` submodules at their recorded commits for URL loading, sockets, Bonjour,
-web views, CoreMIDI, printing, crash reporters and analytics. It excluded `Frameworks/` and the DOSBox
-core, which is covered above. It found nothing beyond the rows above, apart from the
+web views, CoreMIDI, printing, crash reporters and analytics. It excluded
+`Frameworks/` and the DOSBox core, which is covered above. It found nothing beyond the rows above, apart from the
 Standalone About window's web view, which shows a bundled credits page and sends
 link clicks to the browser.
 
